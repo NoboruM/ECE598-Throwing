@@ -63,6 +63,21 @@ class G1JointIndex:
 
     kNotUsedJoint = 29 # NOTE: Weight
 
+    # Left hand
+    LeftHandIndex = 35
+    LeftHandMiddle = 36
+    LeftHandRing = 37
+    LeftHandPinky = 38
+    LeftHandThumb1 = 39
+    LeftHandThumb2 = 40
+    # Right hand
+    RightHandIndex = 29
+    RightHandMiddle = 30
+    RightHandRing = 31
+    RightHandPinky = 32
+    RightHandThumb1 = 33
+    RightHandThumb2 = 34
+
 class Custom:
     def __init__(self):
         self.time_ = 0.0
@@ -71,8 +86,8 @@ class Custom:
         self.counter_ = 0
         self.weight = 0.
         self.weight_rate = 0.2
-        self.kp = 50.
-        self.kd = 1.5
+        self.kp = 30 # 50
+        self.kd = 0.5# 1.5
         self.dq = 0.
         self.tau_ff = 0.
         self.mode_machine_ = 0
@@ -101,7 +116,20 @@ class Custom:
           G1JointIndex.WaistRoll,
           G1JointIndex.WaistPitch
         ]
-
+        self.hand_joints = [
+            G1JointIndex.LeftHandIndex, 
+            G1JointIndex.LeftHandMiddle, 
+            G1JointIndex.LeftHandRing, 
+            G1JointIndex.LeftHandPinky, 
+            G1JointIndex.LeftHandThumb1, 
+            G1JointIndex.LeftHandThumb2, 
+            G1JointIndex.RightHandIndex, 
+            G1JointIndex.RightHandMiddle, 
+            G1JointIndex.RightHandRing, 
+            G1JointIndex.RightHandPinky, 
+            G1JointIndex.RightHandThumb1, 
+            G1JointIndex.RightHandThumb2
+        ]
     def Init(self):
         # create publisher #
         self.arm_sdk_publisher = ChannelPublisher("rt/lowcmd", LowCmd_)
@@ -130,41 +158,63 @@ class Custom:
         self.time_ += self.control_dt_
 
         if self.time_ < self.duration_ :
-          # [Stage 1]: set robot to zero posture
-          self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q =  1 # 1:Enable arm_sdk, 0:Disable arm_sdk
-          for i,joint in enumerate(self.arm_joints):
-            ratio = np.clip(self.time_ / self.duration_, 0.0, 1.0)
-            self.low_cmd.motor_cmd[joint].tau = 0. 
-            self.low_cmd.motor_cmd[joint].q = (1.0 - ratio) * self.low_state.motor_state[joint].q 
-            self.low_cmd.motor_cmd[joint].dq = 0. 
-            self.low_cmd.motor_cmd[joint].kp = self.kp 
-            self.low_cmd.motor_cmd[joint].kd = self.kd
+            # [Stage 1]: set robot to zero posture
+            # self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q =  1 # 1:Enable arm_sdk, 0:Disable arm_sdk
+            for i,joint in enumerate(self.arm_joints):
+                ratio = np.clip(self.time_ / self.duration_, 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = (1.0 - ratio) * self.low_state.motor_state[joint].q 
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = self.kp 
+                self.low_cmd.motor_cmd[joint].kd = self.kd
+            for i, joint in enumerate(self.hand_joints):
+                ratio = np.clip(self.time_ / self.duration_, 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = ratio * 1.0 + (1.0 - ratio) * self.low_state.motor_state[joint].q 
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = 0.3
+                self.low_cmd.motor_cmd[joint].kd = 0.001
 
         elif self.time_ < self.duration_ * 3 :
           # [Stage 2]: lift arms up
-          for i,joint in enumerate(self.arm_joints):
-              ratio = np.clip((self.time_ - self.duration_) / (self.duration_ * 2), 0.0, 1.0)
-              self.low_cmd.motor_cmd[joint].tau = 0. 
-              self.low_cmd.motor_cmd[joint].q = ratio * self.target_pos[i] + (1.0 - ratio) * self.low_state.motor_state[joint].q 
-              self.low_cmd.motor_cmd[joint].dq = 0. 
-              self.low_cmd.motor_cmd[joint].kp = self.kp 
-              self.low_cmd.motor_cmd[joint].kd = self.kd
+            for i,joint in enumerate(self.arm_joints):
+                ratio = np.clip((self.time_ - self.duration_) / (self.duration_ * 2), 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = 0.0#ratio * self.target_pos[i] + (1.0 - ratio) * self.low_state.motor_state[joint].q 
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = self.kp 
+                self.low_cmd.motor_cmd[joint].kd = self.kd
+            for i, joint in enumerate(self.hand_joints):
+                ratio = np.clip((self.time_ - self.duration_) / (self.duration_ * 2), 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = ratio * 2.0 + (1.0 - ratio) * self.low_state.motor_state[joint].q 
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = 0.3
+                self.low_cmd.motor_cmd[joint].kd = 0.001
 
         elif self.time_ < self.duration_ * 6 :
           # [Stage 3]: set robot back to zero posture
-          for i,joint in enumerate(self.arm_joints):
-              ratio = np.clip((self.time_ - self.duration_*3) / (self.duration_ * 3), 0.0, 1.0)
-              self.low_cmd.motor_cmd[joint].tau = 0. 
-              self.low_cmd.motor_cmd[joint].q = (1.0 - ratio) * self.low_state.motor_state[joint].q
-              self.low_cmd.motor_cmd[joint].dq = 0. 
-              self.low_cmd.motor_cmd[joint].kp = self.kp 
-              self.low_cmd.motor_cmd[joint].kd = self.kd
+            for i,joint in enumerate(self.arm_joints):
+                ratio = np.clip((self.time_ - self.duration_*3) / (self.duration_ * 3), 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = 0.0# (1.0 - ratio) * self.low_state.motor_state[joint].q
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = self.kp 
+                self.low_cmd.motor_cmd[joint].kd = self.kd
+            for i, joint in enumerate(self.hand_joints):
+                ratio = np.clip((self.time_ - self.duration_*3) / (self.duration_ * 3), 0.0, 1.0)
+                self.low_cmd.motor_cmd[joint].tau = 0. 
+                self.low_cmd.motor_cmd[joint].q = (1.0 - ratio) * self.low_state.motor_state[joint].q
+                self.low_cmd.motor_cmd[joint].dq = 0. 
+                self.low_cmd.motor_cmd[joint].kp = 0.3
+                self.low_cmd.motor_cmd[joint].kd = 0.001
 
         elif self.time_ < self.duration_ * 7 :
           # [Stage 4]: release arm_sdk
-          for i,joint in enumerate(self.arm_joints):
-              ratio = np.clip((self.time_ - self.duration_*6) / (self.duration_), 0.0, 1.0)
-              self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q =  (1 - ratio) # 1:Enable arm_sdk, 0:Disable arm_sdk
+          print("hi")
+        #   for i,joint in enumerate(self.arm_joints):
+        #       ratio = np.clip((self.time_ - self.duration_*6) / (self.duration_), 0.0, 1.0)
+        #       self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q =  (1 - ratio) # 1:Enable arm_sdk, 0:Disable arm_sdk
         
         else:
             self.done = True

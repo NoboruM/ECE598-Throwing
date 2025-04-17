@@ -547,44 +547,31 @@
     <motor name="right_wrist_pitch" joint="right_wrist_pitch_joint" ctrlrange="-5 5" />
     <motor name="right_wrist_yaw" joint="right_wrist_yaw_joint" ctrlrange="-5 5" />
 
-    <!-- <motor name="left_hand_thumb_0" joint="left_hand_thumb_0_joint" ctrlrange="-2.45 2.45" /> -->
-    <!-- <motor name="left_hand_thumb_1" joint="left_hand_thumb_1_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="left_hand_thumb_2" joint="left_hand_thumb_2_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="left_hand_middle_0" joint="left_hand_middle_0_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="left_hand_middle_1" joint="left_hand_middle_1_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="left_hand_index_0" joint="left_hand_index_0_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="left_hand_index_1" joint="left_hand_index_1_joint" ctrlrange="-0.7 0.7" /> -->
+    <motor name="right_hand_index_q1" joint="right_hand_index_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="right_hand_middle_q1" joint="right_hand_middle_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="right_hand_ring_q1" joint="right_hand_ring_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="right_hand_pinky_q1" joint="right_hand_pinky_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="right_hand_thumb_q1" joint="right_hand_thumb_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="right_hand_thumb_q2" joint="right_hand_thumb_q2_joint" ctrlrange="-0.20 0.20"/>
 
-    <!-- <motor name="right_hand_thumb_0" joint="right_hand_thumb_0_joint" ctrlrange="-2.45 2.45" /> -->
-    <!-- <motor name="right_hand_thumb_1" joint="right_hand_thumb_1_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="right_hand_thumb_2" joint="right_hand_thumb_2_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="right_hand_index_0" joint="right_hand_index_0_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="right_hand_index_1" joint="right_hand_index_1_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="right_hand_middle_0" joint="right_hand_middle_0_joint" ctrlrange="-0.7 0.7" /> -->
-    <!-- <motor name="right_hand_middle_1" joint="right_hand_middle_1_joint" ctrlrange="-0.7 0.7" /> -->
-    <motor name="right_hand_index_q1" joint="right_hand_index_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_index_q2" joint="right_hand_index_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_middle_q1" joint="right_hand_middle_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_middle_q2" joint="right_hand_middle_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_ring_q1" joint="right_hand_ring_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_ring_q2" joint="right_hand_ring_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_pinky_q1" joint="right_hand_pinky_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_pinky_q2" joint="right_hand_pinky_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_thumb_q1" joint="right_hand_thumb_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="right_hand_thumb_q2" joint="right_hand_thumb_q2_joint" ctrlrange="-0.5 0.5"/>
-
-
-    <motor name="left_hand_index_q1" joint="left_hand_index_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_index_q2" joint="left_hand_index_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_middle_q1" joint="left_hand_middle_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_middle_q2" joint="left_hand_middle_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_ring_q1" joint="left_hand_ring_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_ring_q2" joint="left_hand_ring_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_pinky_q1" joint="left_hand_pinky_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_pinky_q2" joint="left_hand_pinky_q2_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_thumb_q1" joint="left_hand_thumb_q1_joint" ctrlrange="-0.5 0.5"/>
-    <motor name="left_hand_thumb_q2" joint="left_hand_thumb_q2_joint" ctrlrange="-0.5 0.5"/>
+    <motor name="left_hand_index_q1" joint="left_hand_index_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="left_hand_middle_q1" joint="left_hand_middle_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="left_hand_ring_q1" joint="left_hand_ring_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="left_hand_pinky_q1" joint="left_hand_pinky_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="left_hand_thumb_q1" joint="left_hand_thumb_q1_joint" ctrlrange="-0.20 0.20"/>
+    <motor name="left_hand_thumb_q2" joint="left_hand_thumb_q2_joint" ctrlrange="-0.20 0.20"/>
   </actuator>
+
+  <equality>
+    <joint name="right_hand_index_q2_mimic" joint1="right_hand_index_q1_joint" joint2="right_hand_index_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="right_hand_middle_q2_mimic" joint1="right_hand_middle_q1_joint" joint2="right_hand_middle_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="right_hand_ring_q2_mimic" joint1="right_hand_ring_q1_joint" joint2="right_hand_ring_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="right_hand_pinky_q2_mimic" joint1="right_hand_pinky_q1_joint" joint2="right_hand_pinky_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="left_hand_index_q2_mimic" joint1="left_hand_index_q1_joint" joint2="left_hand_index_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="left_hand_middle_q2_mimic" joint1="left_hand_middle_q1_joint" joint2="left_hand_middle_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="left_hand_ring_q2_mimic" joint1="left_hand_ring_q1_joint" joint2="left_hand_ring_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+    <joint name="left_hand_pinky_q2_mimic" joint1="left_hand_pinky_q1_joint" joint2="left_hand_pinky_q2_joint" polycoef="-0.72349796 1.05851325"/> 
+  </equality>
 
   <sensor>
     <jointpos name="left_hip_pitch_pos" joint="left_hip_pitch_joint" />
@@ -617,40 +604,18 @@
     <jointpos name="right_wrist_pitch_pos" joint="right_wrist_pitch_joint" />
     <jointpos name="right_wrist_yaw_pos" joint="right_wrist_yaw_joint" />
 
-    <!-- <jointpos name="left_hand_thumb_0_pos" joint="left_hand_thumb_0_joint" /> -->
-    <!-- <jointpos name="left_hand_thumb_1_pos" joint="left_hand_thumb_1_joint" /> -->
-    <!-- <jointpos name="left_hand_thumb_2_pos" joint="left_hand_thumb_2_joint" /> -->
-    <!-- <jointpos name="left_hand_middle_0_pos" joint="left_hand_middle_0_joint" /> -->
-    <!-- <jointpos name="left_hand_middle_1_pos" joint="left_hand_middle_1_joint" /> -->
-    <!-- <jointpos name="left_hand_index_0_pos" joint="left_hand_index_0_joint" /> -->
-    <!-- <jointpos name="left_hand_index_1_pos" joint="left_hand_index_1_joint" /> -->
-    <!-- <jointpos name="right_hand_thumb_0_pos" joint="right_hand_thumb_0_joint" /> -->
-    <!-- <jointpos name="right_hand_thumb_1_pos" joint="right_hand_thumb_1_joint" /> -->
-    <!-- <jointpos name="right_hand_thumb_2_pos" joint="right_hand_thumb_2_joint" /> -->
-    <!-- <jointpos name="right_hand_middle_0_pos" joint="right_hand_middle_0_joint" /> -->
-    <!-- <jointpos name="right_hand_middle_1_pos" joint="right_hand_middle_1_joint" /> -->
-    <!-- <jointpos name="right_hand_index_0_pos" joint="right_hand_index_0_joint" /> -->
-    <!-- <jointpos name="right_hand_index_1_pos" joint="right_hand_index_1_joint" /> -->
     <jointpos name="right_hand_index_q1_pos" joint="right_hand_index_q1_joint"/>
-    <jointpos name="right_hand_index_q2_pos" joint="right_hand_index_q2_joint"/>
     <jointpos name="right_hand_middle_q1_pos" joint="right_hand_middle_q1_joint"/>
-    <jointpos name="right_hand_middle_q2_pos" joint="right_hand_middle_q2_joint"/>
     <jointpos name="right_hand_ring_q1_pos" joint="right_hand_ring_q1_joint"/>
-    <jointpos name="right_hand_ring_q2_pos" joint="right_hand_ring_q2_joint"/>
     <jointpos name="right_hand_pinky_q1_pos" joint="right_hand_pinky_q1_joint"/>
-    <jointpos name="right_hand_pinky_q2_pos" joint="right_hand_pinky_q2_joint"/>
     <jointpos name="right_hand_thumb_q1_pos" joint="right_hand_thumb_q1_joint"/>
     <jointpos name="right_hand_thumb_q2_pos" joint="right_hand_thumb_q2_joint"/>
 
 
     <jointpos name="left_hand_index_q1_pos" joint="left_hand_index_q1_joint"/>
-    <jointpos name="left_hand_index_q2_pos" joint="left_hand_index_q2_joint"/>
     <jointpos name="left_hand_middle_q1_pos" joint="left_hand_middle_q1_joint"/>
-    <jointpos name="left_hand_middle_q2_pos" joint="left_hand_middle_q2_joint"/>
     <jointpos name="left_hand_ring_q1_pos" joint="left_hand_ring_q1_joint"/>
-    <jointpos name="left_hand_ring_q2_pos" joint="left_hand_ring_q2_joint"/>
     <jointpos name="left_hand_pinky_q1_pos" joint="left_hand_pinky_q1_joint"/>
-    <jointpos name="left_hand_pinky_q2_pos" joint="left_hand_pinky_q2_joint"/>
     <jointpos name="left_hand_thumb_q1_pos" joint="left_hand_thumb_q1_joint"/>
     <jointpos name="left_hand_thumb_q2_pos" joint="left_hand_thumb_q2_joint"/>
 
@@ -684,40 +649,18 @@
     <jointvel name="right_wrist_pitch_vel" joint="right_wrist_pitch_joint" />
     <jointvel name="right_wrist_yaw_vel" joint="right_wrist_yaw_joint" />
 
-    <!-- <jointvel name="left_hand_thumb_0_vel" joint="left_hand_thumb_0_joint" /> -->
-    <!-- <jointvel name="left_hand_thumb_1_vel" joint="left_hand_thumb_1_joint" /> -->
-    <!-- <jointvel name="left_hand_thumb_2_vel" joint="left_hand_thumb_2_joint" /> -->
-    <!-- <jointvel name="left_hand_middle_0_vel" joint="left_hand_middle_0_joint" /> -->
-    <!-- <jointvel name="left_hand_middle_1_vel" joint="left_hand_middle_1_joint" /> -->
-    <!-- <jointvel name="left_hand_index_0_vel" joint="left_hand_index_0_joint" /> -->
-    <!-- <jointvel name="left_hand_index_1_vel" joint="left_hand_index_1_joint" /> -->
-    <!-- <jointvel name="right_hand_thumb_0_vel" joint="right_hand_thumb_0_joint" /> -->
-    <!-- <jointvel name="right_hand_thumb_1_vel" joint="right_hand_thumb_1_joint" /> -->
-    <!-- <jointvel name="right_hand_thumb_2_vel" joint="right_hand_thumb_2_joint" /> -->
-    <!-- <jointvel name="right_hand_middle_0_vel" joint="right_hand_middle_0_joint" /> -->
-    <!-- <jointvel name="right_hand_middle_1_vel" joint="right_hand_middle_1_joint" /> -->
-    <!-- <jointvel name="right_hand_index_0_vel" joint="right_hand_index_0_joint" /> -->
-    <!-- <jointvel name="right_hand_index_1_vel" joint="right_hand_index_1_joint" /> -->
     <jointvel name="right_hand_index_q1_vel" joint="right_hand_index_q1_joint"/>
-    <jointvel name="right_hand_index_q2_vel" joint="right_hand_index_q2_joint"/>
     <jointvel name="right_hand_middle_q1_vel" joint="right_hand_middle_q1_joint"/>
-    <jointvel name="right_hand_middle_q2_vel" joint="right_hand_middle_q2_joint"/>
     <jointvel name="right_hand_ring_q1_vel" joint="right_hand_ring_q1_joint"/>
-    <jointvel name="right_hand_ring_q2_vel" joint="right_hand_ring_q2_joint"/>
     <jointvel name="right_hand_pinky_q1_vel" joint="right_hand_pinky_q1_joint"/>
-    <jointvel name="right_hand_pinky_q2_vel" joint="right_hand_pinky_q2_joint"/>
     <jointvel name="right_hand_thumb_q1_vel" joint="right_hand_thumb_q1_joint"/>
     <jointvel name="right_hand_thumb_q2_vel" joint="right_hand_thumb_q2_joint"/>
 
 
     <jointvel name="left_hand_index_q1_vel" joint="left_hand_index_q1_joint"/>
-    <jointvel name="left_hand_index_q2_vel" joint="left_hand_index_q2_joint"/>
     <jointvel name="left_hand_middle_q1_vel" joint="left_hand_middle_q1_joint"/>
-    <jointvel name="left_hand_middle_q2_vel" joint="left_hand_middle_q2_joint"/>
     <jointvel name="left_hand_ring_q1_vel" joint="left_hand_ring_q1_joint"/>
-    <jointvel name="left_hand_ring_q2_vel" joint="left_hand_ring_q2_joint"/>
     <jointvel name="left_hand_pinky_q1_vel" joint="left_hand_pinky_q1_joint"/>
-    <jointvel name="left_hand_pinky_q2_vel" joint="left_hand_pinky_q2_joint"/>
     <jointvel name="left_hand_thumb_q1_vel" joint="left_hand_thumb_q1_joint"/>
     <jointvel name="left_hand_thumb_q2_vel" joint="left_hand_thumb_q2_joint"/>
 
@@ -751,40 +694,18 @@
     <jointactuatorfrc name="right_wrist_pitch_torque" joint="right_wrist_pitch_joint" />
     <jointactuatorfrc name="right_wrist_yaw_torque" joint="right_wrist_yaw_joint" />
 
-    <!-- <jointactuatorfrc name="left_hand_thumb_0_torque" joint="left_hand_thumb_0_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_thumb_1_torque" joint="left_hand_thumb_1_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_thumb_2_torque" joint="left_hand_thumb_2_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_middle_0_torque" joint="left_hand_middle_0_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_middle_1_torque" joint="left_hand_middle_1_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_index_0_torque" joint="left_hand_index_0_joint" /> -->
-    <!-- <jointactuatorfrc name="left_hand_index_1_torque" joint="left_hand_index_1_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_thumb_0_torque" joint="right_hand_thumb_0_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_thumb_1_torque" joint="right_hand_thumb_1_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_thumb_2_torque" joint="right_hand_thumb_2_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_middle_0_torque" joint="right_hand_middle_0_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_middle_1_torque" joint="right_hand_middle_1_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_index_0_torque" joint="right_hand_index_0_joint" /> -->
-    <!-- <jointactuatorfrc name="right_hand_index_1_torque" joint="right_hand_index_1_joint" /> -->
     <jointactuatorfrc name="right_hand_index_q1_torque" joint="right_hand_index_q1_joint"/>
-    <jointactuatorfrc name="right_hand_index_q2_torque" joint="right_hand_index_q2_joint"/>
     <jointactuatorfrc name="right_hand_middle_q1_torque" joint="right_hand_middle_q1_joint"/>
-    <jointactuatorfrc name="right_hand_middle_q2_torque" joint="right_hand_middle_q2_joint"/>
     <jointactuatorfrc name="right_hand_ring_q1_torque" joint="right_hand_ring_q1_joint"/>
-    <jointactuatorfrc name="right_hand_ring_q2_torque" joint="right_hand_ring_q2_joint"/>
     <jointactuatorfrc name="right_hand_pinky_q1_torque" joint="right_hand_pinky_q1_joint"/>
-    <jointactuatorfrc name="right_hand_pinky_q2_torque" joint="right_hand_pinky_q2_joint"/>
     <jointactuatorfrc name="right_hand_thumb_q1_torque" joint="right_hand_thumb_q1_joint"/>
     <jointactuatorfrc name="right_hand_thumb_q2_torque" joint="right_hand_thumb_q2_joint"/>
 
 
     <jointactuatorfrc name="left_hand_index_q1_torque" joint="left_hand_index_q1_joint"/>
-    <jointactuatorfrc name="left_hand_index_q2_torque" joint="left_hand_index_q2_joint"/>
     <jointactuatorfrc name="left_hand_middle_q1_torque" joint="left_hand_middle_q1_joint"/>
-    <jointactuatorfrc name="left_hand_middle_q2_torque" joint="left_hand_middle_q2_joint"/>
     <jointactuatorfrc name="left_hand_ring_q1_torque" joint="left_hand_ring_q1_joint"/>
-    <jointactuatorfrc name="left_hand_ring_q2_torque" joint="left_hand_ring_q2_joint"/>
     <jointactuatorfrc name="left_hand_pinky_q1_torque" joint="left_hand_pinky_q1_joint"/>
-    <jointactuatorfrc name="left_hand_pinky_q2_torque" joint="left_hand_pinky_q2_joint"/>
     <jointactuatorfrc name="left_hand_thumb_q1_torque" joint="left_hand_thumb_q1_joint"/>
     <jointactuatorfrc name="left_hand_thumb_q2_torque" joint="left_hand_thumb_q2_joint"/>
 
