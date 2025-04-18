@@ -88,13 +88,13 @@ class MujocoInterface:
         self.weight = 0.
         self.weight_rate = 0.2
         self.arm_kp = 40 # 50
-        self.arm_kd = 0.5# 1.5
+        self.arm_kd = 1.0# 1.5
         self.hand_kp = 0.3
         self.hand_kd = 0.001
         self.leg_kp = 40 
         self.leg_kd = 0.5
         self.torso_kp = 40 
-        self.torso_kd = 0.5
+        self.torso_kd = 1.0
         self.dq = 0.
         self.tau_ff = 0.
         self.mode_machine_ = 0
@@ -105,21 +105,21 @@ class MujocoInterface:
         self.done = False
 
         self.target_pos = [
-            MotorCmd_(G1JointIndex.LeftHipPitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.LeftHipRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.LeftHipYaw, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.LeftKnee, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.LeftAnklePitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.LeftAnkleRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightHipPitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightHipRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightHipYaw, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightKnee, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightAnklePitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.RightAnkleRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
-            MotorCmd_(G1JointIndex.WaistYaw, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
-            MotorCmd_(G1JointIndex.WaistRoll, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
-            MotorCmd_(G1JointIndex.WaistPitch, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHipPitch, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.LeftHipRoll, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.LeftHipYaw, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.LeftKnee, 0.0, 0.0, 0.0, 100, 2.0, 0),
+            MotorCmd_(G1JointIndex.LeftAnklePitch, 0.0, 0.0, 0.0, 40, 1.0, 0),
+            MotorCmd_(G1JointIndex.LeftAnkleRoll, 0.0, 0.0, 0.0, 40, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightHipPitch, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightHipRoll, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightHipYaw, 0.0, 0.0, 0.0, 60, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightKnee, 0.0, 0.0, 0.0, 100, 2.0, 0),
+            MotorCmd_(G1JointIndex.RightAnklePitch, 0.0, 0.0, 0.0, 40, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightAnkleRoll, 0.0, 0.0, 0.0, 40, 1.0, 0),
+            MotorCmd_(G1JointIndex.WaistYaw, 0.0, 0.0, 0.0, 60, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistRoll, 0.0, 0.0, 0.0, 40, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistPitch, 0.0, 0.0, 0.0, 40, self.torso_kd, 0),
             MotorCmd_(G1JointIndex.LeftShoulderPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
             MotorCmd_(G1JointIndex.LeftShoulderRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
             MotorCmd_(G1JointIndex.LeftShoulderYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
