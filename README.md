@@ -1,6 +1,6 @@
 # ECE598-Throwing
 ## Dependencies
-https://github.com/unitreerobotics/unitree_sdk2_python/tree/master  
+https://github.com/NoboruM/unitree_sdk2_python  
 https://github.com/unitreerobotics/unitree_mujoco
 
 For Nobo:
