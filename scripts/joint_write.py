@@ -7,6 +7,7 @@ from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import MotorCmd_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 from unitree_sdk2py.comm.motion_switcher.motion_switcher_client import MotionSwitcherClient
@@ -62,14 +63,6 @@ class G1JointIndex:
     RightWristYaw = 28    # NOTE: INVALID for g1 23dof
 
     kNotUsedJoint = 29 # NOTE: Weight
-
-    # Left hand
-    LeftHandIndex = 35
-    LeftHandMiddle = 36
-    LeftHandRing = 37
-    LeftHandPinky = 38
-    LeftHandThumb1 = 39
-    LeftHandThumb2 = 40
     # Right hand
     RightHandIndex = 29
     RightHandMiddle = 30
@@ -78,7 +71,15 @@ class G1JointIndex:
     RightHandThumb1 = 33
     RightHandThumb2 = 34
 
-class Custom:
+    # Left hand
+    LeftHandIndex = 35
+    LeftHandMiddle = 36
+    LeftHandRing = 37
+    LeftHandPinky = 38
+    LeftHandThumb1 = 39
+    LeftHandThumb2 = 40
+
+class MujocoInterface:
     def __init__(self):
         self.time_ = 0.0
         self.control_dt_ = 0.02  
@@ -103,59 +104,50 @@ class Custom:
         self.crc = CRC()
         self.done = False
 
-
-        self.arm_joints = [
-          G1JointIndex.LeftShoulderPitch,  G1JointIndex.LeftShoulderRoll,
-          G1JointIndex.LeftShoulderYaw,    G1JointIndex.LeftElbow,
-          G1JointIndex.LeftWristRoll,      G1JointIndex.LeftWristPitch,
-          G1JointIndex.LeftWristYaw,
-          G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
-          G1JointIndex.RightShoulderYaw,   G1JointIndex.RightElbow,
-          G1JointIndex.RightWristRoll,     G1JointIndex.RightWristPitch,
-          G1JointIndex.RightWristYaw,
-          G1JointIndex.WaistYaw,
-          G1JointIndex.WaistRoll,
-          G1JointIndex.WaistPitch
-        ]
-        self.hand_joints = [
-            G1JointIndex.LeftHandIndex, 
-            G1JointIndex.LeftHandMiddle, 
-            G1JointIndex.LeftHandRing, 
-            G1JointIndex.LeftHandPinky, 
-            G1JointIndex.LeftHandThumb1, 
-            G1JointIndex.LeftHandThumb2, 
-            G1JointIndex.RightHandIndex, 
-            G1JointIndex.RightHandMiddle, 
-            G1JointIndex.RightHandRing, 
-            G1JointIndex.RightHandPinky, 
-            G1JointIndex.RightHandThumb1, 
-            G1JointIndex.RightHandThumb2
-        ]
-        self.leg_joints = [
-            G1JointIndex.LeftHipPitch,
-            G1JointIndex.LeftHipRoll,
-            G1JointIndex.LeftHipYaw,
-            G1JointIndex.LeftKnee,
-            G1JointIndex.LeftAnklePitch,
-            G1JointIndex.LeftAnkleRoll,
-            G1JointIndex.RightHipPitch,
-            G1JointIndex.RightHipRoll,
-            G1JointIndex.RightHipYaw,
-            G1JointIndex.RightKnee,
-            G1JointIndex.RightAnklePitch,
-            G1JointIndex.RightAnkleRoll
-        ]
-        self.torso_joints = [
-            G1JointIndex.WaistYaw,
-            G1JointIndex.WaistRoll,
-            G1JointIndex.WaistPitch
-        ]
-
-        self.arm_target_pos = [0 for _ in range(len(self.arm_joints))]
-        self.leg_target_pos = [0 for _ in range(len(self.leg_joints))]
-        self.hand_target_pos = [0 for _ in range(len(self.hand_joints))]
-        self.torso_target_pos = [0 for _ in range(len(self.torso_joints))]
-
+        self.target_pos = [
+            MotorCmd_(G1JointIndex.LeftHipPitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHipRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHipYaw, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.LeftKnee, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.LeftAnklePitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.LeftAnkleRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightHipPitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightHipRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightHipYaw, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightKnee, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightAnklePitch, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.RightAnkleRoll, 0.0, 0.0, 0.0, self.leg_kp, self.leg_kd, 0),
+            MotorCmd_(G1JointIndex.WaistYaw, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistRoll, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistPitch, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.LeftElbow, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.LeftWristRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.LeftWristPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0), 
+            MotorCmd_(G1JointIndex.LeftWristYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightShoulderPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightShoulderRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightShoulderYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightElbow, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightWristRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightWristPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightWristYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandIndex, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandMiddle, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandRing, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandPinky, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandThumb1, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandThumb2, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandIndex, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandMiddle, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandRing, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandPinky, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandThumb1, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.LeftHandThumb2, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0)
+            ]
+        print("target_pose length: ", len(self.target_pos))
     def Init(self):
         # create publisher #
         self.arm_sdk_publisher = ChannelPublisher("rt/lowcmd", LowCmd_)
@@ -179,39 +171,18 @@ class Custom:
         self.low_state = msg
         if self.first_update_low_state == False:
             # TODO: need to set the initial target pose to the actual position instead of zero
-            self.arm_target_pos = [0 for _ in range(len(self.arm_joints))]
-            self.leg_target_pos = [0 for _ in range(len(self.leg_joints))]
-            self.hand_target_pos = [0 for _ in range(len(self.hand_joints))]
-            self.torso_target_pos = [0 for _ in range(len(self.torso_joints))]
+            for i in range(len(self.target_pos)):
+                self.target_pos[i].q = msg.motor_state[i].q
             self.first_update_low_state = True
         
     def LowCmdWrite(self):
         self.time_ += self.control_dt_
-        for i,joint in enumerate(self.arm_joints):
-            self.low_cmd.motor_cmd[joint].tau = 0. 
-            self.low_cmd.motor_cmd[joint].q = self.arm_target_pos[i]
-            self.low_cmd.motor_cmd[joint].dq = 0. 
-            self.low_cmd.motor_cmd[joint].kp = self.arm_kp 
-            self.low_cmd.motor_cmd[joint].kd = self.arm_kd
-        for i, joint in enumerate(self.hand_joints):
-            self.low_cmd.motor_cmd[joint].tau = 0. 
-            self.low_cmd.motor_cmd[joint].q = self.hand_target_pos[i]
-            self.low_cmd.motor_cmd[joint].dq = 0. 
-            self.low_cmd.motor_cmd[joint].kp = self.hand_kp
-            self.low_cmd.motor_cmd[joint].kd = self.hand_kd
-        for i, joint in enumerate(self.leg_joints):
-            self.low_cmd.motor_cmd[joint].tau = 0. 
-            self.low_cmd.motor_cmd[joint].q = self.leg_target_pos[i]
-            self.low_cmd.motor_cmd[joint].dq = 0. 
-            self.low_cmd.motor_cmd[joint].kp = self.leg_kp 
-            self.low_cmd.motor_cmd[joint].kd = self.leg_kd
-
-        for i, joint in enumerate(self.torso_joints):
-            self.low_cmd.motor_cmd[joint].tau = 0. 
-            self.low_cmd.motor_cmd[joint].q = self.torso_target_pos[i]
-            self.low_cmd.motor_cmd[joint].dq = 0. 
-            self.low_cmd.motor_cmd[joint].kp = self.torso_kp 
-            self.low_cmd.motor_cmd[joint].kd = self.torso_kd
+        for i, joint in enumerate(self.target_pos):
+            self.low_cmd.motor_cmd[joint.mode].tau = self.target_pos[i].tau
+            self.low_cmd.motor_cmd[joint.mode].q = self.target_pos[i].q
+            self.low_cmd.motor_cmd[joint.mode].dq = self.target_pos[i].dq
+            self.low_cmd.motor_cmd[joint.mode].kp = self.target_pos[i].kp
+            self.low_cmd.motor_cmd[joint.mode].kd = self.target_pos[i].kd
 
         self.low_cmd.crc = self.crc.Crc(self.low_cmd)
         self.arm_sdk_publisher.Write(self.low_cmd)
@@ -225,12 +196,12 @@ if __name__ == '__main__':
     else:
         ChannelFactoryInitialize(1, "lo")
 
-    custom = Custom()
-    custom.Init()
-    custom.Start()
+    MujocoInterface = MujocoInterface()
+    MujocoInterface.Init()
+    MujocoInterface.Start()
 
     while True:        
         time.sleep(1)
-        if custom.done: 
+        if MujocoInterface.done: 
            print("Done!")
            sys.exit(-1)    
