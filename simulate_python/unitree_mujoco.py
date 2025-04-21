@@ -3,6 +3,7 @@ import mujoco
 import mujoco.viewer
 import cv2
 from threading import Thread, Lock
+import numpy as np
 
 # Add EGL configuration for headless rendering (critical fix)
 import os
@@ -51,8 +52,8 @@ def PhysicsViewerThread():
             viewer.sync()
             renderer.update_scene(mj_data, camera="rgb_cam")
             rgb_image = renderer.render()
-        
-        # OpenCV operations in main thread (critical fix)
+            rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)  # Convert to BGR
+        # OpenCV operations in main thread
         cv2.imshow('RGB Camera View', rgb_image)
         cv2.waitKey(1)
 
