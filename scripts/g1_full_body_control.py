@@ -1,4 +1,6 @@
 from joint_write import *
+import time
+import copy
 
 class ThrowController:
     def __init__(self):
@@ -9,8 +11,14 @@ class ThrowController:
         self.MujocoInterface.Start()
         self.joint_pos_cmd = [0.0 for _ in range(41)]
         self.joint_vel_cmd = [0.0 for _ in range(41)]
+        self.joint_init_pos = []
+        self.init_time = 2.0
+        self.back_time = self.init_time + 3.0
+        self.throw_time = 1.0
+
     def Init(self):
         self.joint_pos_cmd = [joint.q for joint in self.MujocoInterface.target_pos]
+        self.joint_init_pos = copy.copy(self.joint_pos_cmd)
 
     def Start(self):
         self.ControllerThreadPtr = RecurrentThread(
@@ -20,10 +28,30 @@ class ThrowController:
     def Controller(self):
         self.time_ += self.control_dt_
         # calculate the joint commands
+        if (self.time_ < self.init_time):
+            # move to initial pose
+            ratio = np.clip(self.time_ / self.init_time, 0.0, 1.0)
+            self.joint_pos_cmd[G1JointIndex.RightWristRoll] = self.joint_init_pos[G1JointIndex.RightWristRoll] + np.pi/2.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightShoulderRoll] = self.joint_init_pos[G1JointIndex.RightShoulderRoll] - np.pi/8.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex] + 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle] + 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing] + 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky] + 1.0*ratio
 
+        elif (self.time_ < 2*self.init_time):
+            ratio = np.clip((self.time_-self.init_time) / (self.init_time), 0.0, 1.0)
+            self.joint_pos_cmd[G1JointIndex.RightShoulderPitch] = self.joint_init_pos[G1JointIndex.RightShoulderPitch] + np.pi/4.0*(np.sin(ratio*np.pi - np.pi/2.0) + 1)/2.0
+            self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = np.pi/8.0*np.cos(ratio*np.pi - np.pi/2.0)
+        elif (self.time_ < (2*self.init_time + self.throw_time)):
+            ratio = np.clip((self.time_- 2*self.init_time) / (self.throw_time), 0.0, 1.0)
+            self.joint_pos_cmd[G1JointIndex.RightShoulderPitch] = self.joint_init_pos[G1JointIndex.RightShoulderPitch] + np.pi/4.0 - np.pi/2.0*(np.sin(ratio*np.pi - np.pi/2.0) + 1)/2.0
+            self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = -np.pi/4.0*np.cos(ratio*np.pi - np.pi/2.0)
+
+        # store the target joint positions
         for i in range(41):
             self.MujocoInterface.target_pos[i].q = self.joint_pos_cmd[i]
             self.MujocoInterface.target_pos[i].dq = self.joint_vel_cmd[i]
+
 
 if __name__ == '__main__':
 

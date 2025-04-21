@@ -89,7 +89,7 @@ class MujocoInterface:
         self.weight_rate = 0.2
         self.arm_kp = 40 # 50
         self.arm_kd = 1.0# 1.5
-        self.hand_kp = 0.3
+        self.hand_kp = 1.0
         self.hand_kd = 0.001
         self.leg_kp = 40 
         self.leg_kd = 0.5
@@ -138,8 +138,8 @@ class MujocoInterface:
             MotorCmd_(G1JointIndex.RightHandMiddle, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.RightHandRing, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.RightHandPinky, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
-            MotorCmd_(G1JointIndex.RightHandThumb1, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
-            MotorCmd_(G1JointIndex.RightHandThumb2, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
+            MotorCmd_(G1JointIndex.RightHandThumb1, 0.0, 0.0, 0.0, 0.1, 0.001, 0),
+            MotorCmd_(G1JointIndex.RightHandThumb2, 0.0, 0.0, 0.0, 0.1, 0.001, 0),
             MotorCmd_(G1JointIndex.LeftHandIndex, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.LeftHandMiddle, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.LeftHandRing, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
