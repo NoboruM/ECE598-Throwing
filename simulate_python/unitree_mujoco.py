@@ -1,96 +1,9 @@
-# import time
-# import mujoco
-# import mujoco.viewer
-# from threading import Thread
-# import threading
-
-# from unitree_sdk2py.core.channel import ChannelFactoryInitialize
-# from unitree_sdk2py_bridge import UnitreeSdk2Bridge, ElasticBand
-
-# import config
-
-# import cv2
-
-# locker = threading.Lock()
-
-# mj_model = mujoco.MjModel.from_xml_path(config.ROBOT_SCENE)
-# mj_data = mujoco.MjData(mj_model)
-# renderer = mujoco.Renderer(mj_model, height=480, width=640)
-
-# if config.ENABLE_ELASTIC_BAND:
-#     elastic_band = ElasticBand()
-#     if config.ROBOT == "h1" or config.ROBOT == "g1":
-#         band_attached_link = mj_model.body("torso_link").id
-#     else:
-#         band_attached_link = mj_model.body("base_link").id
-#     viewer = mujoco.viewer.launch_passive(
-#         mj_model, mj_data, key_callback=elastic_band.MujuocoKeyCallback
-#     )
-# else:
-#     viewer = mujoco.viewer.launch_passive(mj_model, mj_data)
-
-# mj_model.opt.timestep = config.SIMULATE_DT
-# num_motor_ = mj_model.nu
-# dim_motor_sensor_ = 3 * num_motor_
-
-# time.sleep(0.2)
-
-
-# def SimulationThread():
-#     global mj_data, mj_model
-
-#     ChannelFactoryInitialize(config.DOMAIN_ID, config.INTERFACE)
-#     unitree = UnitreeSdk2Bridge(mj_model, mj_data)
-
-#     if config.USE_JOYSTICK:
-#         unitree.SetupJoystick(device_id=0, js_type=config.JOYSTICK_TYPE)
-#     if config.PRINT_SCENE_INFORMATION:
-#         unitree.PrintSceneInformation()
-
-#     while viewer.is_running():
-#         step_start = time.perf_counter()
-
-#         locker.acquire()
-
-#         if config.ENABLE_ELASTIC_BAND:
-#             if elastic_band.enable:
-#                 mj_data.xfrc_applied[band_attached_link, :3] = elastic_band.Advance(
-#                     mj_data.qpos[:3], mj_data.qvel[:3]
-#                 )
-#         mujoco.mj_step(mj_model, mj_data)
-
-#         locker.release()
-
-#         time_until_next_step = mj_model.opt.timestep - (
-#             time.perf_counter() - step_start
-#         )
-#         if time_until_next_step > 0:
-#             time.sleep(time_until_next_step)
-
-
-# def PhysicsViewerThread():
-#     while viewer.is_running():
-#         locker.acquire()
-#         viewer.sync()
-#         locker.release()
-
-#         renderer.update_scene(mj_data, camera="rgb_cam")
-#         rgb_image = renderer.render()  # Returns a (480, 640, 3) uint8 array
-#         cv2.imshow('RGB Camera View', rgb_image)
-#         time.sleep(config.VIEWER_DT)
-
-
-# if __name__ == "__main__":
-#     viewer_thread = Thread(target=PhysicsViewerThread)
-#     sim_thread = Thread(target=SimulationThread)
-
-#     viewer_thread.start()
-#     sim_thread.start()
 import time
 import mujoco
 import mujoco.viewer
 import cv2
 from threading import Thread, Lock
+import numpy as np
 
 # Add EGL configuration for headless rendering (critical fix)
 import os
@@ -113,7 +26,7 @@ band_attached_link = mj_model.body("torso_link").id
 # Viewer must be created in main thread
 viewer = mujoco.viewer.launch_passive(
     mj_model, mj_data,
-    key_callback=ElasticBand().MujuocoKeyCallback
+    key_callback=elastic_band.MujuocoKeyCallback
 )
 
 def SimulationThread():
@@ -124,15 +37,11 @@ def SimulationThread():
     while viewer.is_running():
         step_start = time.perf_counter()
         with locker:  # Use context manager for safer locking
-            print("elastic_band: ", elastic_band.enable)
             if elastic_band.enable:
                 mj_data.xfrc_applied[band_attached_link, :3] = elastic_band.Advance(
                     mj_data.qpos[:3], mj_data.qvel[:3]
                 )
-            else:
-                print("band should not be applied")
             mujoco.mj_step(mj_model, mj_data)
-        
         time_until_next_step = mj_model.opt.timestep - (time.perf_counter() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)
@@ -143,8 +52,8 @@ def PhysicsViewerThread():
             viewer.sync()
             renderer.update_scene(mj_data, camera="rgb_cam")
             rgb_image = renderer.render()
-        
-        # OpenCV operations in main thread (critical fix)
+            rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)  # Convert to BGR
+        # OpenCV operations in main thread
         cv2.imshow('RGB Camera View', rgb_image)
         cv2.waitKey(1)
 
