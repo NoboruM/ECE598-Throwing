@@ -1,0 +1,49 @@
+<mujoco model="clown">
+  <compiler angle="radian" meshdir="meshes" />
+  <option gravity="0 0 -9.8"/>
+
+
+<asset>
+    <mesh name="clownbody" file="clown.obj" scale="0.002 0.002 0.002" />
+    <texture type="2d" name="clowntexture" file="finalclowntexture.png"/>
+    <material name="clownmaterial" texture="clowntexture" />
+
+    <mesh name="clownstand" file="clownstand.STL" scale="0.001 0.001 0.001"/>
+</asset>
+
+<worldbody>
+  <body name="clownpin3" pos=" 3 -0.20 0.665" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+
+  <body name="clownpin" pos="3 0 0.665" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+
+  <body name="clownpin2" pos=" 3 0.20 0.665" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+
+  <body name="2ndfloorclownpin3" pos=" 3 -0.20 0.945" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+
+  <body name="2ndfloorclownpin" pos="3 0 0.945" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+
+  <body name="2ndfloorclownpin2" pos=" 3 0.20 0.945" euler="-55 -45.5 0">
+    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  </body>
+  
+
+
+
+  <geom name="clownstand" type="mesh" mesh="clownstand" mass="200" pos="3.30 0.4 0" euler="-54.98 -45.55 0"/>
+</worldbody>
+
+</mujoco>
+
+
+
+
