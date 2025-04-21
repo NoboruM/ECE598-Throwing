@@ -21,7 +21,8 @@ mj_data = mujoco.MjData(mj_model)
 if config.ENABLE_ELASTIC_BAND:
     elastic_band = ElasticBand()
 # Initialize renderer in main thread
-renderer = mujoco.Renderer(mj_model, height=480, width=640)
+if config.USE_CAMERA:
+    renderer = mujoco.Renderer(mj_model, height=480, width=640)
 band_attached_link = mj_model.body("torso_link").id
 # Viewer must be created in main thread
 viewer = mujoco.viewer.launch_passive(
@@ -50,12 +51,16 @@ def PhysicsViewerThread():
     while viewer.is_running():
         with locker:
             viewer.sync()
-            renderer.update_scene(mj_data, camera="rgb_cam")
-            rgb_image = renderer.render()
-            rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)  # Convert to BGR
-        # OpenCV operations in main thread
-        cv2.imshow('RGB Camera View', rgb_image)
-        cv2.waitKey(1)
+            if config.USE_CAMERA:
+                renderer.update_scene(mj_data, camera="rgb_cam")
+                rgb_image = renderer.render()
+                rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)  # Convert to BGR
+        if config.USE_CAMERA:
+            # OpenCV operations in main thread
+            cv2.imshow('RGB Camera View', rgb_image)
+            cv2.waitKey(1)
+        
+        time.sleep(config.VIEWER_DT)
 
 if __name__ == "__main__":
     # Run viewer in main thread
@@ -65,4 +70,5 @@ if __name__ == "__main__":
     # Handle rendering in main thread
     PhysicsViewerThread()
     sim_thread.join()
-    cv2.destroyAllWindows()
+    if config.USE_CAMERA:
+        cv2.destroyAllWindows()
