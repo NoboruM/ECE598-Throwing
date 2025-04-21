@@ -426,3 +426,4 @@ class ElasticBand:
             self.length += 0.1
         if key == glfw.KEY_9:
             self.enable = not self.enable
+            print("switching the elastic band")
