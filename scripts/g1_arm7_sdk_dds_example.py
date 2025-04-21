@@ -172,8 +172,8 @@ class Custom:
                 self.low_cmd.motor_cmd[joint].tau = 0. 
                 self.low_cmd.motor_cmd[joint].q = ratio * 1.0 + (1.0 - ratio) * self.low_state.motor_state[joint].q 
                 self.low_cmd.motor_cmd[joint].dq = 0. 
-                self.low_cmd.motor_cmd[joint].kp = 0.3
-                self.low_cmd.motor_cmd[joint].kd = 0.001
+                self.low_cmd.motor_cmd[joint].kp = 40
+                self.low_cmd.motor_cmd[joint].kd = 0.4
 
         elif self.time_ < self.duration_ * 3 :
           # [Stage 2]: lift arms up
@@ -189,8 +189,8 @@ class Custom:
                 self.low_cmd.motor_cmd[joint].tau = 0. 
                 self.low_cmd.motor_cmd[joint].q = ratio * 2.0 + (1.0 - ratio) * self.low_state.motor_state[joint].q 
                 self.low_cmd.motor_cmd[joint].dq = 0. 
-                self.low_cmd.motor_cmd[joint].kp = 0.3
-                self.low_cmd.motor_cmd[joint].kd = 0.001
+                self.low_cmd.motor_cmd[joint].kp = 40
+                self.low_cmd.motor_cmd[joint].kd = 0.4
 
         elif self.time_ < self.duration_ * 6 :
           # [Stage 3]: set robot back to zero posture
@@ -206,8 +206,8 @@ class Custom:
                 self.low_cmd.motor_cmd[joint].tau = 0. 
                 self.low_cmd.motor_cmd[joint].q = (1.0 - ratio) * self.low_state.motor_state[joint].q
                 self.low_cmd.motor_cmd[joint].dq = 0. 
-                self.low_cmd.motor_cmd[joint].kp = 0.3
-                self.low_cmd.motor_cmd[joint].kd = 0.001
+                self.low_cmd.motor_cmd[joint].kp = 40
+                self.low_cmd.motor_cmd[joint].kd = 0.4
 
         elif self.time_ < self.duration_ * 7 :
           # [Stage 4]: release arm_sdk

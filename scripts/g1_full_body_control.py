@@ -33,10 +33,10 @@ class ThrowController:
             ratio = np.clip(self.time_ / self.init_time, 0.0, 1.0)
             self.joint_pos_cmd[G1JointIndex.RightWristRoll] = self.joint_init_pos[G1JointIndex.RightWristRoll] + np.pi/2.0*ratio
             self.joint_pos_cmd[G1JointIndex.RightShoulderRoll] = self.joint_init_pos[G1JointIndex.RightShoulderRoll] - np.pi/8.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex] + 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle] + 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing] + 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky] + 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex] - 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle] - 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing] - 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky] - 1.0*ratio
 
         elif (self.time_ < 2*self.init_time):
             ratio = np.clip((self.time_-self.init_time) / (self.init_time), 0.0, 1.0)

@@ -8,3 +8,7 @@ Run this to enable multicast for the "lo" interface. Required for simulation com
 ```
 sudo ip link set lo multicast on
 ```
+## If cyclonedds not found
+```
+export CYCLONEDDS_HOME="$HOME/cyclonedds/install"
+```

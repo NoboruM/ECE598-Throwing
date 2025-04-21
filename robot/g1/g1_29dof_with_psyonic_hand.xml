@@ -18,7 +18,7 @@
       <joint damping="0.05" armature="0.01" frictionloss="0.1"/>
     </default>
     <default class="hand_motor">
-      <joint damping="0.01" armature="0.01" frictionloss="0.1"/>
+      <joint damping="0.001" armature="0.01" frictionloss="0.05"/>
     </default>
   </default>
   <asset>
