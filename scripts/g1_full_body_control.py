@@ -57,7 +57,7 @@ class ThrowController:
             self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = -np.pi*3/2.0*np.cos(ratio*np.pi - np.pi/2.0)
             self.joint_pos_cmd[G1JointIndex.RightHandThumb1] = self.joint_init_pos[G1JointIndex.RightHandThumb1]
             self.joint_pos_cmd[G1JointIndex.RightHandThumb2] = self.joint_init_pos[G1JointIndex.RightHandThumb2]
-            if (self.time_ > (2*self.init_time + self.throw_time*8.0/10.0)):
+            if (self.time_ > (2*self.init_time + self.throw_time*6.0/10.0)):
                 self.joint_pos_cmd[G1JointIndex.RightHandIndex] = 0.0
                 self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = 0.0
                 self.joint_pos_cmd[G1JointIndex.RightHandRing] = 0.0
