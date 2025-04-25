@@ -4,20 +4,45 @@ import mujoco.viewer
 import cv2
 from threading import Thread, Lock
 import numpy as np
-
-# Add EGL configuration for headless rendering (critical fix)
-import os
-os.environ["MUJOCO_GL"] = "egl"  # Force EGL backend
-
-# Rest of your imports...
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from unitree_sdk2py_bridge import UnitreeSdk2Bridge, ElasticBand
 import config
 
+# Add EGL configuration for headless rendering
+import os
+os.environ["MUJOCO_GL"] = "egl"  # Force EGL backend
+
 locker = Lock()
 mj_model = mujoco.MjModel.from_xml_path(config.ROBOT_SCENE)
 mj_data = mujoco.MjData(mj_model)
+desired_qpos_values = np.zeros(63)
+init_finger_angle = 0.5
+desired_hand_pos = np.array([
+    1.4*init_finger_angle,
+    1.4*1.05851325*init_finger_angle +0.72349796,
+    1.4*init_finger_angle,
+    1.4*1.05851325*init_finger_angle +0.72349796,
+    1.4*init_finger_angle,
+    1.4*1.05851325*init_finger_angle +0.72349796,
+    1.5*init_finger_angle,
+    1.5*1.05851325*init_finger_angle +0.72349796,
+    -1.8,
+    0.0
+])
+# desired_qpos_values[57:] = np.array([0, 0.33, -0.105, 0.9, 0, 0])
+desired_qpos_values[56:] = np.array([0.335, -0.105, 0.9, 0, 0, 0, 1])
+desired_qpos_values[46:56] = desired_hand_pos
 
+for i in range(7, 63):
+    mj_data.qpos[i] = desired_qpos_values[i]
+mujoco.mj_forward(mj_model, mj_data)    # Propagates initial state
+
+# set initial joint torques on right arm to keep zero pose:
+mj_data.ctrl[22:29] = [-2.5, -0.209, 0.0, -2.9, -0.0128, -1.2, -0.00198]
+# set initial joint torques on the right hand to grasp the ball
+for i in range(29, 35):
+    mj_data.ctrl[i] = 0.1
+mj_data.ctrl[33] = -0.1
 if config.ENABLE_ELASTIC_BAND:
     elastic_band = ElasticBand()
 # Initialize renderer in main thread

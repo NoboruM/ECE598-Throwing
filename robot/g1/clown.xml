@@ -5,7 +5,7 @@
 
 <asset>
     <mesh name="clownbody" file="clown.obj" scale="0.002 0.002 0.002" />
-    <texture type="2d" name="clowntexture" file="finalclowntexture.png"/>
+    <texture type="2d" name="clowntexture" file="images/finalclowntexture.png"/>
     <material name="clownmaterial" texture="clowntexture" />
 
     <mesh name="clownstand" file="clownstand.STL" scale="0.001 0.001 0.001"/>

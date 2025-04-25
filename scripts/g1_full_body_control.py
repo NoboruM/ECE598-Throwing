@@ -33,20 +33,42 @@ class ThrowController:
             ratio = np.clip(self.time_ / self.init_time, 0.0, 1.0)
             self.joint_pos_cmd[G1JointIndex.RightWristRoll] = self.joint_init_pos[G1JointIndex.RightWristRoll] + np.pi/2.0*ratio
             self.joint_pos_cmd[G1JointIndex.RightShoulderRoll] = self.joint_init_pos[G1JointIndex.RightShoulderRoll] - np.pi/8.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex] - 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle] - 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing] - 1.0*ratio
-            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky] - 1.0*ratio
+            self.joint_pos_cmd[G1JointIndex.RightElbow] = self.joint_init_pos[G1JointIndex.RightElbow] + (np.pi/1.9)*ratio
+            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex]
+            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle]
+            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing]
+            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky]
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb1] = self.joint_init_pos[G1JointIndex.RightHandThumb1]
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb2] = self.joint_init_pos[G1JointIndex.RightHandThumb2]
 
         elif (self.time_ < 2*self.init_time):
             ratio = np.clip((self.time_-self.init_time) / (self.init_time), 0.0, 1.0)
             self.joint_pos_cmd[G1JointIndex.RightShoulderPitch] = self.joint_init_pos[G1JointIndex.RightShoulderPitch] + np.pi/4.0*(np.sin(ratio*np.pi - np.pi/2.0) + 1)/2.0
             self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = np.pi/8.0*np.cos(ratio*np.pi - np.pi/2.0)
+            self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex]
+            self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle]
+            self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing]
+            self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky]
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb1] = self.joint_init_pos[G1JointIndex.RightHandThumb1]
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb2] = self.joint_init_pos[G1JointIndex.RightHandThumb2]
         elif (self.time_ < (2*self.init_time + self.throw_time)):
             ratio = np.clip((self.time_- 2*self.init_time) / (self.throw_time), 0.0, 1.0)
-            self.joint_pos_cmd[G1JointIndex.RightShoulderPitch] = self.joint_init_pos[G1JointIndex.RightShoulderPitch] + np.pi/4.0 - np.pi/2.0*(np.sin(ratio*np.pi - np.pi/2.0) + 1)/2.0
-            self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = -np.pi/4.0*np.cos(ratio*np.pi - np.pi/2.0)
-
+            self.joint_pos_cmd[G1JointIndex.RightShoulderPitch] = self.joint_init_pos[G1JointIndex.RightShoulderPitch] + np.pi/4.0 - np.pi*3/4*(np.sin(ratio*np.pi - np.pi/2.0) + 1)/2.0
+            self.joint_vel_cmd[G1JointIndex.RightShoulderPitch] = -np.pi*3/2.0*np.cos(ratio*np.pi - np.pi/2.0)
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb1] = self.joint_init_pos[G1JointIndex.RightHandThumb1]
+            self.joint_pos_cmd[G1JointIndex.RightHandThumb2] = self.joint_init_pos[G1JointIndex.RightHandThumb2]
+            if (self.time_ > (2*self.init_time + self.throw_time*8.0/10.0)):
+                self.joint_pos_cmd[G1JointIndex.RightHandIndex] = 0.0
+                self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = 0.0
+                self.joint_pos_cmd[G1JointIndex.RightHandRing] = 0.0
+                self.joint_pos_cmd[G1JointIndex.RightHandPinky] = 0.0
+            else:
+                self.joint_pos_cmd[G1JointIndex.RightHandIndex] = self.joint_init_pos[G1JointIndex.RightHandIndex]
+                self.joint_pos_cmd[G1JointIndex.RightHandMiddle] = self.joint_init_pos[G1JointIndex.RightHandMiddle]
+                self.joint_pos_cmd[G1JointIndex.RightHandRing] = self.joint_init_pos[G1JointIndex.RightHandRing]
+                self.joint_pos_cmd[G1JointIndex.RightHandPinky] = self.joint_init_pos[G1JointIndex.RightHandPinky]
+        else:
+            controller.MujocoInterface.done = False
         # store the target joint positions
         for i in range(41):
             self.MujocoInterface.target_pos[i].q = self.joint_pos_cmd[i]
