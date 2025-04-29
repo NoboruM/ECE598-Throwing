@@ -12,3 +12,17 @@ sudo ip link set lo multicast on
 ```
 export CYCLONEDDS_HOME="$HOME/cyclonedds/install"
 ```
+
+# Test Optas Environment
+Original repo: https://github.com/cmower/optas  
+Currently uses the pybullet simulator instead of mujoco.  
+Test file is based off of dual_arm.py  
+## Setup:  
+```
+pip install pyoptas
+pip install pybullet
+```
+## To run:
+```
+python3 g1_dual_arm.py
+```
