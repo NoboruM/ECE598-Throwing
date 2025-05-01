@@ -35,19 +35,22 @@ class PyBullet:
             p.addUserDebugLine([0,0,0], [0,0,line_length], [0,0,1], lineWidth=2)  # Z-axis (Blue)
         else:
             self.client_id = p.connect(p.DIRECT, **connect_kwargs)
+        print([attr for attr in dir(p) if "ENABLE" in attr or "DEBUG" in attr])
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.resetSimulation()
         p.setGravity(gravX=0.0, gravY=0.0, gravZ=-9.81)
         p.setTimeStep(dt)
         p.configureDebugVisualizer(flag=p.COV_ENABLE_GUI, enable=0)
-        p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
+        # p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 1)
         p.resetDebugVisualizerCamera(
             cameraDistance=camera_distance,
             cameraYaw=camera_yaw,
             cameraPitch=camera_pitch,
             cameraTargetPosition=camera_target_position,
         )
-
+        p.addUserDebugLine([0,0,0], [1,0,0], [1,0,0])  # X-axis (Red)
+        p.addUserDebugLine([0,0,0], [0,1,0], [0,1,0])  # Y-axis (Green)
+        p.addUserDebugLine([0,0,0], [0,0,1], [0,0,1])  # Z-axis (Blue)
         if add_floor:
             self.add_floor()
 
@@ -134,7 +137,13 @@ class FixedBaseRobot:
         self._id = p.loadURDF(
             fileName=urdf_filename, useFixedBase=1, basePosition=base_position
         )
+
         self.num_joints = p.getNumJoints(self._id)
+        num_joints = p.getNumJoints(self._id)
+        for i in range(num_joints):
+            joint_info = p.getJointInfo(self._id, i)
+            link_name = joint_info[12].decode('utf-8')  # link name as bytes, decode to string
+            print(f"Link index: {i}, Link name: {link_name}")
         self._actuated_joints = []
         for j in range(self.num_joints):
             info = p.getJointInfo(self._id, j)
@@ -188,13 +197,16 @@ class KukaLWR(FixedBaseRobot):
         f = os.path.join(cwd, "robots", "kuka_lwr", "kuka_lwr.urdf")
         self.urdf_filename = f
         super().__init__(f, base_position=base_position)
+    def GetLinkState(self, link_index, compute_link_velocity, compute_fk):
+        return p.getLinkState(self._id, link_index, compute_link_velocity, compute_fk)
 
 class G1DualArm(FixedBaseRobot):
     def __init__(self, base_position=[0.0] * 3):
         f = os.path.join(cwd, "robots", "g1", "g1_dual_arm.urdf")
         self.urdf_filename = f
         super().__init__(f, base_position=base_position)
-
+    def GetLinkState(self, link_index, compute_link_velocity, compute_fk):
+        return p.getLinkState(self._id, link_index, compute_link_velocity, compute_fk)
 
 class KukaLBR(FixedBaseRobot):
     def __init__(self, base_position=[0.0] * 3):

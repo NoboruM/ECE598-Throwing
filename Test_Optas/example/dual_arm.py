@@ -79,6 +79,17 @@ class DualKukaPlanner(Manager):
         builder.add_cost_term("kukal_min_join_vel", w_dq * optas.sumsqr(dQl))
         builder.add_cost_term("kukar_min_join_vel", w_dq * optas.sumsqr(dQr))
 
+        ee_jacobian = kukar.get_global_link_geometric_jacobian_function(link_ee, n=T)
+        # Compute Cartesian velocity: J(q) * dq
+        cart_vel_r = optas.SX.zeros(6, T-1)  # 6D twist (linear + angular)
+        J = ee_jacobian(Qr)
+        for i in range(T-1):
+            cart_vel_r[:, i] = J[i] @ dQr[:, i]  # J * dq
+
+        goal_eff_vel = optas.DM([1.0, 0.0, 0.0]) # [vx, vy, vz]
+        goal_eff_ang = optas.DM([0.0, 0.0, 0.0])
+        builder.add_equality_constraint("eff_vel", cart_vel_r[:3, -1], goal_eff_vel, reduce_constraint=True)
+        builder.add_equality_constraint("eff_ang_vel", cart_vel_r[3:, -1], goal_eff_vel, reduce_constraint=True)
         # Get start position for each robot
         pos0l = kukal.get_global_link_position(link_ee, qcl)
         pos0r = kukar.get_global_link_position(link_ee, qcr)
@@ -113,8 +124,8 @@ class DualKukaPlanner(Manager):
                 path_eel[:, i] = alpha * pos2l + (1.0 - alpha) * pos1l
                 path_eer[:, i] = alpha * pos2r + (1.0 - alpha) * pos1r
 
-        builder.add_cost_term("ee_pos_pathl", optas.sumsqr(ee_pos_pathl - path_eel))
-        builder.add_cost_term("ee_pos_pathr", optas.sumsqr(ee_pos_pathr - path_eer))
+        # builder.add_cost_term("ee_pos_pathl", optas.sumsqr(ee_pos_pathl - path_eel))
+        # builder.add_cost_term("ee_pos_pathr", optas.sumsqr(ee_pos_pathr - path_eer))
 
         # Setup solver
         optimization = builder.build()
@@ -201,6 +212,9 @@ def main(gui=True):
         kukal.cmd(planl(t))
         kukar.cmd(planr(t))
 
+        wrist_link_state = kukar.GetLinkState(10, True, True) # get wrist yaw joint state
+        print("Linear val: ", wrist_link_state[6])
+        print("Angular_val: ", wrist_link_state[7])
         pybullet_api.time.sleep(dt*float(gui))
 
     pybullet_api.time.sleep(10.0*float(gui))
