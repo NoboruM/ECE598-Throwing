@@ -9,6 +9,7 @@ from optas.templates import Manager
 
 # PyBullet
 import pybullet_api
+import casadi as cs
 
 g1_base_position = [0.0, 0.0, 0.0]
 
@@ -70,10 +71,24 @@ class DualG1Planner(Manager):
         dQl = builder.get_model_states(g1_name, time_deriv=1)
 
         # Cost: minimize joint velocity
-        w_dq = 0.01
+        w_dq = 0.0
         builder.add_cost_term("g1_min_join_vel_r", w_dq * optas.sumsqr(dQr))
         builder.add_cost_term("g1_min_join_vel_l", w_dq * optas.sumsqr(dQl))
 
+        ee_jacobian = g1.get_global_link_geometric_jacobian_function(link_ee_r, n=T)
+        # Compute Cartesian velocity: J(q) * dq
+        cart_vel_r = optas.SX.zeros(6, T-1)  # 6D twist (linear + angular)
+        J = ee_jacobian(Ql)
+        for i in range(T-1):
+            cart_vel_r[:, i] = J[i] @ dQr[:, i]  # J * dq
+
+        goal_eff_vel = optas.DM.zeros(3, T-1) # [vx, vy, vz]
+        goal_eff_vel[0, -1] = 2.0
+        # goal_eff_vel = optas.DM([2.0, 0.0, 0.0]) # [vx, vy, vz]
+        goal_eff_ang = optas.DM([0.0, 0.0, 0.0])
+        builder.add_equality_constraint("eff_vel", cart_vel_r[:3,:], goal_eff_vel, reduce_constraint=True)
+        builder.add_equality_constraint("eff_ang_vel", cart_vel_r[3:, -1], goal_eff_vel, reduce_constraint=True)
+        
         # Get start position for each arm
         pos0r = g1.get_global_link_position(link_ee_r, qc)
         pos0l = g1.get_global_link_position(link_ee_l, qc)
@@ -110,17 +125,18 @@ class DualG1Planner(Manager):
                 path_ee_r[:, i] = alpha * pos2r + (1.0 - alpha) * pos1r
                 path_ee_l[:, i] = alpha * pos2l + (1.0 - alpha) * pos1l
         # cost term to track the end effector paths
-        builder.add_cost_term("ee_pos_path_r", optas.sumsqr(ee_pos_path_r - path_ee_r))
-        builder.add_cost_term("ee_pos_path_l", optas.sumsqr(ee_pos_path_l - path_ee_l))
+        # builder.add_cost_term("ee_pos_path_r", optas.sumsqr(ee_pos_path_r - path_ee_r))
+        # builder.add_cost_term("ee_pos_path_l", optas.sumsqr(ee_pos_path_l - path_ee_l))
 
         # Setup solver
         optimization = builder.build()
-        solver = optas.CasADiSolver(optimization).setup("ipopt")
+        solver = optas.CasADiSolver(optimization).setup("ipopt", {"ipopt":{"tol": 1e-10, "max_iter":1000}})
 
         # Save variables for later
         self.g1_name = g1_name
+        self.g1_ndof = g1.ndof
         self.Tmax = Tmax
-
+        self.T = T
         return solver
 
     def _setup_g1_model(self, name, base_position):
@@ -147,6 +163,8 @@ class DualG1Planner(Manager):
                 "qc": optas.DM(qc)
             }
         )
+        Q0 = optas.diag(qc) @ optas.DM.ones(self.g1_ndof, self.T)
+        self.solver.reset_initial_seed({f"{self.g1_name}/q/x": Q0})
 
     def get_target(self):
         return self.solution
@@ -168,15 +186,50 @@ def main(gui=True):
     dt = 1.0 / float(hz)
     pb = pybullet_api.PyBullet(dt, gui=gui)
 
-    box = pybullet_api.DynamicBox(
-        base_position=[0.25, 0, 0.15], half_extents=[0.15, 0.15, 0.15]
-    )
+    # box = pybullet_api.DynamicBox(
+    #     base_position=[0.25, 0, 0.15], half_extents=[0.15, 0.15, 0.15]
+    # )
 
     g1_dual_arm = pybullet_api.G1DualArm(base_position=g1_base_position)
     print("ndof = ", g1_dual_arm.ndof)
-    qc = optas.np.deg2rad([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    g1_dual_arm.reset(qc)
+    # qc = optas.np.deg2rad([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
+    # in order of: 
+    waist_y_jnt = 0.0
+    waist_r_jnt = 0.0
+    waist_p_jnt = 0.0
+    l_shoulder_p_jnt = 0.0
+    l_shoulder_r_jnt = 0.0
+    l_shoulder_y_jnt = 0.0
+    l_elbow_jnt = 0.0
+    l_wrist_r_jnt = 0.0
+    l_wrist_p_jnt = 0.0
+    l_wrist_y_jnt = 0.0
+    r_shoulder_p_jnt = 0.0#90
+    r_shoulder_r_jnt = -90.0
+    r_shoulder_y_jnt = 0.0
+    r_elbow_jnt = 0#120
+    r_wrist_r_jnt = 90
+    r_wrist_p_jnt = 0.0
+    r_wrist_y_jnt = 0.0#-90.0
+    qc = optas.np.deg2rad([waist_y_jnt,
+        waist_r_jnt,
+        waist_p_jnt,
+        l_shoulder_p_jnt,
+        l_shoulder_r_jnt,
+        l_shoulder_y_jnt,
+        l_elbow_jnt,
+        l_wrist_r_jnt,
+        l_wrist_p_jnt,
+        l_wrist_y_jnt,
+        r_shoulder_p_jnt,
+        r_shoulder_r_jnt,
+        r_shoulder_y_jnt,
+        r_elbow_jnt,
+        r_wrist_r_jnt,
+        r_wrist_p_jnt,
+        r_wrist_y_jnt])
+    g1_dual_arm.reset(qc)
     dual_g1_planner.reset(qc, qc)
     planl = dual_g1_planner.plan()
 
@@ -191,6 +244,10 @@ def main(gui=True):
 
         g1_dual_arm.cmd(planl(t))
 
+        wrist_link_state = g1_dual_arm.GetLinkState(20, True, True) # get wrist yaw joint state
+        print("wrist: ", wrist_link_state)
+        print("Linear val: ", wrist_link_state[6])
+        # print("Angular_val: ", wrist_link_state[7])
         pybullet_api.time.sleep(dt*float(gui))
 
     pybullet_api.time.sleep(10.0*float(gui))
