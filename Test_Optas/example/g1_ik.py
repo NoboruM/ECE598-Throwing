@@ -3,7 +3,9 @@
 # Python standard lib
 import os
 import pathlib
-
+from casadi import SX, transpose
+import numpy as np
+from scipy.spatial.transform import Rotation
 # OpTaS
 import optas
 from optas.visualize import Visualizer
@@ -18,29 +20,53 @@ class G1IK:
         limits = robot.get_limits(time_deriv=0)
         q_min = limits[0]
         q_max = limits[1]
-
+        self.g = 9.81
         # get robot state variables
         self.q_T = self.builder.get_model_states(self.robot_name)
+        J = robot.get_global_link_linear_jacobian(eff_link, self.q_T)
+
         self.builder.add_bound_inequality_constraint("joint", q_min, self.q_T, q_max)
 
         q_0 = self.builder.add_parameter("q_0", robot.ndof)  # initial robot joint configuration
         x_T = self.builder.add_parameter("x_T", 3)  # target position
         theta_T = self.builder.add_parameter("theta_T", 4)  # target ee orientation
+        r_targ = self.builder.add_parameter("r_targ", 3)  # ball target position in world coordinates
 
         self.builder.add_cost_term("cost", optas.sumsqr(self.q_T - q_0))
 
         self.builder.add_equality_constraint("FK", self.fk(self.q_T), x_T)
         self.builder.add_equality_constraint("FK_orientation", self.quat(self.q_T), theta_T)
+
+        r_ee = self.fk(self.q_T)
+        mu_hat = optas.SX.zeros(3, 1)
+        mu_2 = optas.SX.zeros(3, 1)
+
+        tmp = r_targ - r_ee # vector from end effector to target
+        Z = optas.norm_2(tmp[0:2]) #modify z component to make the 45 deg angle 
+        tmp[2] = Z
+        mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
+
+        # calculate the desired release velocity in mu_hat direction
+        # v_0 = optas.sqrt(self.g*optas.norm_2(tmp[:2])/(2*(mu_hat[2]*optas.norm_2(tmp[:2]) - Z*optas.norm_2(mu_hat[:2]))*optas.norm_2(mu_hat[:2]))) 
+        # mu = mu_hat*v_0 #Desired release velocity vector (this one should be correct direction and magnitude)
+        A = J@transpose(J)
+        mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
+        print("mu_2; ", mu_2.shape)
+        self.builder.add_cost_term("manipulability", -100*optas.sumsqr(mu_2))
+
         # setup solver
         self.solver_casadi = optas.CasADiSolver(self.builder.build()).setup("ipopt")
 
-    def SolveIK(self, x_T, theta_T, q_0):
+
+
+    def SolveIK(self, x_T, theta_T, q_0, r_targ):
 
         # Set parameters
         self.solver_casadi.reset_parameters({
             "q_0": optas.DM(q_0),
             "x_T": x_T,
-            "theta_T": theta_T})
+            "theta_T": theta_T,
+            "r_targ": r_targ})
 
         # set initial seed
         self.solver_casadi.reset_initial_seed({f"{self.robot_name}/q/x": q_0})
@@ -152,7 +178,24 @@ class G1IK:
 #     vis.start()
     
 #     return 0
+def CalcEEQuat(r_targ, x_T):
+    r_target = np.array(r_targ)
+    r_ee = np.array(x_T)
+    tmp = r_target - r_ee # vector from end effector to target
+    Z = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
+    tmp[2] = Z
+    mu_hat = tmp/np.linalg.norm(tmp) # unit launch direction vector
 
+    v_0 = np.sqrt(9.81*np.linalg.norm(tmp[:2])/(2*(mu_hat[2]*np.linalg.norm(tmp[:2]) - Z*np.linalg.norm(mu_hat[:2]))*np.linalg.norm(mu_hat[:2]))) 
+    mu = mu_hat*v_0 #Desired release velocity vector (this one should be correct direction and magnitude)
+    print(mu)
+    original_dir = np.array([0, 1, 0])
+    rotation, _ = Rotation.align_vectors([mu_hat], [original_dir])
+    quaternion = rotation.as_quat()
+    return quaternion
+def CalcManipulability():
+    
+    return 0
 def main():
     cwd = pathlib.Path(__file__).parent.resolve()  # path to current working directory
 
@@ -164,9 +207,7 @@ def main():
 
     ik_solver = G1IK(robot, link_ee)
 
-    x_T = [0.2, -0.2, 0.2]  # target end-effector position
-    theta_T = [0, 0, 0, 1] # target end-effector orientation
-    theta_T = [0, 0, 0.3826834, 0.9238795] # target end-effector orientation
+    # theta_T = [0, 0, 0.3826834, 0.9238795] # target end-effector orientation
     waist_y_jnt = 0.0
     waist_r_jnt = 0.0
     waist_p_jnt = 0.0
@@ -209,11 +250,14 @@ def main():
     #     vis.robot(robot, soln, alpha=0.5)
     #     q_0 = soln
 
-    soln1 = ik_solver.SolveIK(x_T, theta_T, q_0)
+    x_T = [0.15, -0.2, 0.2]  # target end-effector position in global frame
+    r_targ = [1, 1, 0]
 
-    soln2 = ik_solver.SolveIK([0.5, 0, 0.2], theta_T, soln1)
-    vis.robot(robot, soln1, alpha=0.75)
-    vis.robot(robot, soln2, alpha=0.75)
+    soln1 = ik_solver.SolveIK(x_T, CalcEEQuat(r_targ, x_T), q_0, r_targ)
+    r_targ = [0.5, -0.5, 0.5]
+    soln2 = ik_solver.SolveIK(x_T, CalcEEQuat(r_targ, x_T), q_0, r_targ)
+    vis.robot(robot, soln1, alpha=0.15, show_links = True)
+    # vis.robot(robot, soln2, alpha=0.75, )
     vis.grid_floor()
     vis.start()
 
