@@ -12,34 +12,52 @@
 </asset>
 
 <worldbody>
-  <body name="clownpin3" pos=" 3 -0.20 0.665" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="clownpin3" pos=" 3 -0.20 0.665">
+    <joint type="free"/>
+    <geom name="hitbox3" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.1" rgba="1 0 0 0.5"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
-  <body name="clownpin" pos="3 0 0.665" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="clownpin" pos="3 0 0.665" >
+    <joint type="free"/>
+    <geom name="hitbox1" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.095" rgba="1 0 0 0"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
-  <body name="clownpin2" pos=" 3 0.20 0.665" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="clownpin2" pos=" 3 0.20 0.665">
+    <joint type="free"/>
+    <geom name="hitbox2" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.095" rgba="1 0 0 0"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
-  <body name="2ndfloorclownpin3" pos=" 3 -0.20 0.945" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="2ndfloorclownpin3" pos=" 3 -0.20 0.945">
+    <joint type="free"/>
+    <geom name="hitbox2.3" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.095" rgba="1 0 0 0"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
-  <body name="2ndfloorclownpin" pos="3 0 0.945" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="2ndfloorclownpin" pos="3 0 0.945">
+    <joint type="free"/>
+    <geom name="hitbox2.1" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.095" rgba="1 0 0 0"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
-  <body name="2ndfloorclownpin2" pos=" 3 0.20 0.945" euler="-55 -45.5 0">
-    <geom type="mesh" mesh="clownbody" mass="2.0" material="clownmaterial"/>
+  <body name="2ndfloorclownpin2" pos=" 3 0.20 0.945">
+    <joint type="free"/>  
+    <geom name="hitbox2.2" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.095" rgba="1 0 0 0"/>
+    <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
   
+  <body name="shelf" pos="3 0 0" euler="0 0 1.5708 ">
+    <geom name="leftpanel" type="box" size="0.01 0.2 0.6" pos="-0.5 0 0.6" />
+    <geom name="rightpanel" type="box" size="0.01 0.2 0.6" pos="0.5 0 0.6"/>
+    <geom name="bottomshelf" type="box" size="0.5 0.2 0.01" pos="0 0 0.1"/>
+    <geom name="middleshelftopmost" type="box" size="0.5 0.2 0.01" pos="0 0 0.935"/>
+    <geom name="middleshelfbottommost" type="box" size="0.5 0.2 0.01" pos="0 0 0.655"/>
+    <geom name="topshelf" type="box" size="0.5 0.2 0.01" pos="0 0 1.2"/>
 
+  </body>
 
-
-  <geom name="clownstand" type="mesh" mesh="clownstand" mass="200" pos="3.30 0.4 0" euler="-54.98 -45.55 0"/>
 </worldbody>
 
 </mujoco>
