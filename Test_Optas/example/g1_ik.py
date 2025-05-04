@@ -51,10 +51,10 @@ class G1IK:
         A = self.J@transpose(self.J)
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
         print("mu_2; ", mu_2.shape)
-        self.builder.add_cost_term("manipulability", -100*optas.sumsqr(mu_2)) # maximize mu2
+        self.builder.add_cost_term("manipulability", -1000*optas.sumsqr(mu_2)) # maximize mu2
 
         # setup solver
-        self.solver_casadi = optas.CasADiSolver(self.builder.build()).setup("ipopt")
+        self.solver_casadi = optas.CasADiSolver(self.builder.build()).setup("ipopt", {"ipopt.print_level": 0})
 
     def SolveIK(self, x_T, theta_T, q_0, r_targ):
 
@@ -90,14 +90,16 @@ class G1IK:
         print("manipulability score: ", mu_2)
         return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2
       
-def CalcEEQuat(r_targ, x_T):
+def CalcTrajParams(r_targ, x_T):
     r_target = np.array(r_targ)
     r_ee = np.array(x_T)
+    r_e2T = r_target - r_ee
     tmp = r_target - r_ee # vector from end effector to target
-    Z = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
-    tmp[2] = Z
+    tmp[2] = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
+    Z = r_e2T[2]
     mu_hat = tmp/np.linalg.norm(tmp) # unit launch direction vector
     original_dir = np.array([0, 1, 0]) # align y axis with the direction
+    v_0 = np.sqrt(9.81*np.linalg.norm(tmp[:2])/(2*(mu_hat[2]*np.linalg.norm(tmp[:2]) - Z*np.linalg.norm(mu_hat[:2]))*np.linalg.norm(mu_hat[:2])))
     # compute rotation axis and angle
     cross = np.cross(original_dir, mu_hat)
     axis = cross / np.linalg.norm(cross) if np.linalg.norm(cross) > 1e-6 else np.array([1, 0, 0])
@@ -110,7 +112,7 @@ def CalcEEQuat(r_targ, x_T):
         axis = np.array([1, 0, 0]) if original_dir[0] != 0 else np.array([0, 1, 0])
         
     rot = Rotation.from_quat([*(axis * np.sin(angle/2)), np.cos(angle/2)])
-    return rot.as_quat() 
+    return rot.as_quat(), mu_hat, v_0
 
 def main():
     cwd = pathlib.Path(__file__).parent.resolve()  # path to current working directory
@@ -166,12 +168,14 @@ def main():
     #     vis.robot(robot, soln, alpha=0.5)
     #     q_0 = soln
 
-    x_T = [0.15, -0.2, 0.2]  # target end-effector position in global frame
-    r_targ = [1, 1, 0]
-
-    soln1, soln1_ee, soln1_manip = ik_solver.SolveIK(x_T, CalcEEQuat(r_targ, x_T), q_0, r_targ)
+    # x_T = [0.15, -0.2, 0.2]  # target end-effector position in global frame
+    x_T = [0.21, -0.49, 0.2]
+    r_targ = [2, 0, 1]
+    quat_T, mu_hat, v_0 = CalcTrajParams(r_targ, x_T)
+    soln1, soln1_ee, soln1_manip = ik_solver.SolveIK(x_T, quat_T, q_0, r_targ)
     r_targ = [0.5, -0.5, 0.5]
-    soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(x_T, CalcEEQuat(r_targ, x_T), q_0, r_targ)
+    quat_T, mu_hat, v_0 = CalcTrajParams(r_targ, x_T)
+    soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(x_T, quat_T, q_0, r_targ)
     vis.robot(robot, soln1, alpha=0.15, show_links = True)
     # vis.robot(robot, soln2, alpha=0.75, )
     vis.grid_floor()
