@@ -123,9 +123,9 @@ def CalcTrajParams(r_targ, x_T):
     return rot.as_quat(), mu_hat, v_0
 
 def main():
-    cwd = pathlib.Path(__file__).parent.resolve()  # path to current working directory
-
-    urdf_filename = os.path.join(cwd, "robots", "g1", "g1_dual_arm.urdf")
+    cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
+    cwd = os.path.split(cwd)[0]
+    urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
     # Setup robot
     robot = optas.RobotModel(urdf_filename)
     robot_name = robot.get_name()

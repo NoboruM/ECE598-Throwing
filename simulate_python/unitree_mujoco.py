@@ -15,7 +15,7 @@ os.environ["MUJOCO_GL"] = "egl"  # Force EGL backend
 locker = Lock()
 mj_model = mujoco.MjModel.from_xml_path(config.ROBOT_SCENE)
 mj_data = mujoco.MjData(mj_model)
-desired_qpos_values = np.zeros(63)
+desired_qpos_values = np.zeros(56)
 init_finger_angle = 0.5
 desired_hand_pos = np.array([
     1.4*init_finger_angle,
@@ -29,11 +29,20 @@ desired_hand_pos = np.array([
     -1.8,
     0.0
 ])
-# desired_qpos_values[57:] = np.array([0, 0.33, -0.105, 0.9, 0, 0])
-desired_qpos_values[56:] = np.array([0.335, -0.105, 0.9, 0, 0, 0, 1])
-desired_qpos_values[46:56] = desired_hand_pos
 
-for i in range(7, 63):
+desired_qpos_values[49:] = np.array([0.335, -0.105, 0.9, 0, 0, 0, 1])# ball pose
+desired_qpos_values[39:49] = desired_hand_pos
+joint_names = [mj_model.joint(i).name for i in range(mj_model.njnt)]
+for i, jnt in enumerate(joint_names):
+    if (i < 49):
+        print("jnt: {}, {}".format(jnt, i))
+    else:
+        print("jnt: {}, {}-{}".format(jnt, i, i+7))
+print('\n'*10)
+print("qpos LENGTH: ", len(mj_data.qpos))
+print("ctrl LENGTH: ", len(mj_data.ctrl))
+print('\n'*10)
+for i in range(0, 56):
     mj_data.qpos[i] = desired_qpos_values[i]
 mujoco.mj_forward(mj_model, mj_data)    # Propagates initial state
 
@@ -43,6 +52,7 @@ mj_data.ctrl[22:29] = [-2.5, -0.209, 0.0, -2.9, -0.0128, -1.2, -0.00198]
 for i in range(29, 35):
     mj_data.ctrl[i] = 0.1
 mj_data.ctrl[33] = -0.1
+
 if config.ENABLE_ELASTIC_BAND:
     elastic_band = ElasticBand()
 # Initialize renderer in main thread

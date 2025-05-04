@@ -19,9 +19,10 @@ class DualG1Planner(Manager):
     def setup_solver(self):
         # Parameters
         self.T = 50
-        Tmax = 2.0
+        Tmax = 10.0
         link_ee_r = "right_wrist_yaw_link"
         link_head = "head_link"
+        link_torso = "torso_link"
         t = optas.linspace(0, Tmax, self.T)
         dt = float((t[1] - t[0]).toarray()[0, 0])
         # setup throwing parameters
@@ -81,29 +82,32 @@ class DualG1Planner(Manager):
 
         # goal_eff_position = optas.DM([0.825, 0.35, 0.2])
         # goal_eff_vel = optas.DM([2.0, 0.0, 0.0, 0.0, 0.0, 0.0]) # [wx, wy, wz, vx, vy, vz]
-        goal_eff_vel = optas.SX([0.4, 0.4, 0.4]) # [vx, vy, vz]
+        goal_eff_vel = optas.SX([0.2, 0.0, 0.0]) # [vx, vy, vz]
         qf = builder.get_model_state(g1_name, t=-1, time_deriv=0)
         dqf = builder.get_model_state(g1_name, t=-1, time_deriv=1)
         # cart_vel_r = optas.SX.zeros(6, self.T-1)  # 6D twist (linear + angular)
         # J_t = self.g1.get_global_link_geometric_jacobian(link_ee_r, qf)
         # J_t = self.g1.get_global_link_analytical_jacobian_function(link_ee_r, n=self.T)
         J_t = self.g1.get_global_link_linear_jacobian(link_ee_r, qf)
+        J_test = self.g1.get_link_linear_jacobian(link_ee_r, qf, link_torso)
         # goal_ee_vel = optas.SX.zeros(6, self.T-1)
         # for i in range(self.T-1):
 
         # for i in range(self.T):
         #     vf[:,i] = J_t(qc)
         print("J_t: ", J_t.shape)
+        print("J_test: ", J_test.shape)
         print("dqf: ", dqf.shape)
         vf = J_t@dqf
         print("vf: ", vf.shape)
         print("goal_eff_vel: ", goal_eff_vel.shape)
-        # builder.add_equality_constraint("eff_vel", vf, goal_eff_vel, reduce_constraint=True)
+        builder.add_equality_constraint("eff_vel", vf, goal_eff_vel, reduce_constraint=True)
 
         ## attempting end effector velocity trajectry constraint
 
-        eff_vel_traj = optas.SX.zeros(3, self.T)
-        builder.add_equality_constraint("eff_vel_traj", cart_vel_r[:3,:self.T], eff_vel_traj)
+        # eff_vel_traj = optas.SX.zeros(3, self.T-1)
+        # eff_vel_traj[-1,0] = 0.4
+        # builder.add_equality_constraint("eff_vel_traj", cart_vel_r[:3,:], eff_vel_traj)
         # add equality constraint to keep head upright
         # pF = g1.get_global_link_position(link_head, Q)
         # builder.add_equality_constraint("head_upright", pF, head_orient)
@@ -155,7 +159,7 @@ class DualG1Planner(Manager):
             name=name,
             time_derivs=[0, 1, 2],  # i.e. joint position/velocity trajectory
         )
-        model.add_base_frame("base", xyz=base_position)
+        # model.add_base_frame("base", xyz=base_position)
         return model
 
     def is_ready(self):

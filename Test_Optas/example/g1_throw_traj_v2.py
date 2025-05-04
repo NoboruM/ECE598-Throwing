@@ -9,8 +9,9 @@ from optas.templates import Manager
 
 # PyBullet
 import pybullet_api
-from g1_manip_search_v2 import G1ThrowSearch
-from g1_ik import CalcTrajParams
+import casadi as cs
+from casadi import SX, transpose, trace
+from g1_ik import G1IK, CalcTrajParams
 from optas.visualize import Visualizer
 
 g1_base_position = [0.0, 0.0, 0.5]
@@ -57,8 +58,7 @@ class DualG1Planner(Manager):
 
         # Setup parameters
         q0 = builder.add_parameter("q0", g1.ndof)
-        v_ee = builder.add_parameter("v_ee", 3)
-        q_f = builder.add_parameter("q_f", g1.ndof)
+        r_targ = builder.add_parameter("r_targ", 3)  # ball target position in world coordinates
 
         # Constraint: initial configuration
         builder.fix_configuration(self.g1_name, q0, t=0)
@@ -73,39 +73,6 @@ class DualG1Planner(Manager):
         # q0 = builder.get_model_state(self.g1_name, t=0, time_deriv=0)
         ##########################################################################
 
-
-        ######################## Setup Obstacle Avoidance ########################
-        # place obstacle at the torso
-        torso_position = g1.get_global_link_position('torso_link', optas.np.deg2rad([0.0]*17))
-        obs = optas.DM.zeros(3, 3)
-        obs[:,0] = torso_position
-        obs[:,1] = torso_position
-        obs[:,2] = torso_position
-        obs[2,0] += 0.20
-        obs[2,1] += 0.05
-        obs[2,2] += 0.125
-        linkrad = 0.04
-        obsrad = [0.09]*obs.shape[1]
-        link_names = [
-            'right_shoulder_yaw_link',
-            'right_elbow_link',
-            'right_wrist_roll_link',
-            'right_wrist_pitch_link',
-            'right_wrist_yaw_link']
-        obstacle_names = []
-        for i in range(len(obsrad)):
-            obstacle_names.append("torso{}".format(i))
-        # builder.sphere_collision_avoidance_constraints(self.g1_name, obstacle_names, link_names=link_names)
-        # params = {}
-        # for link_name in link_names:
-        #     params[link_name + "_radii"] = linkrad
-
-        # for i, obstacle_name in enumerate(obstacle_names):
-        #     params[obstacle_name + "_position"] = obs[:, i]
-        #     params[obstacle_name + "_radii"] = obsrad[i]
-        ##############################################################
-
-
         ######################## Robot States ########################
         # Get end effector position FK function
         posr_ee = g1.get_global_link_position_function(link_ee_r, n=self.T)
@@ -114,6 +81,7 @@ class DualG1Planner(Manager):
         # Get Torso position FK function
         pos_head = g1.get_link_position_function(link_head, "pelvis", n=self.T)
         rot_head = g1.get_link_rotation_function(link_head, "pelvis", n=self.T)
+        torso_yaw = g1.get_global_link_rpy_function(link="torso_link")
 
         # Get joint trajectory: ndof-by-T sym array for robot trajectory
         Q = builder.get_model_states(self.g1_name) 
@@ -121,6 +89,7 @@ class DualG1Planner(Manager):
         # Get end-effector position trajectories
         ee_pos_path_r = posr_ee(Q)
         # ee_pos_path_l = posl_ee(Q)
+        eff_y_axis = g1.get_global_link_axis(link_ee_r, Q, 'y')
 
         # Get joint velocity trajectory
         dQr = builder.get_model_states(self.g1_name, time_deriv=1)
@@ -136,7 +105,16 @@ class DualG1Planner(Manager):
         vel_ee = J[-1]@dQf
         #############################################################
 
+        
+        ############################ Constrain End Effector #################################
 
+        mu_hat = optas.SX.zeros(3, 1)
+        tmp = optas.SX.zeros(3, 1)
+        tmp = r_targ - ee_pos_path_r[:3, -1] # vector from end effector to target
+        Z = tmp[2]
+        tmp[2] = optas.norm_2(tmp) #modify z component to make the 45 deg angle 
+        mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
+        v_0 = optas.sqrt(9.81*optas.norm_2(tmp)/(2*(mu_hat[2]*optas.norm_2(tmp) - Z*optas.norm_2(mu_hat))*optas.norm_2(mu_hat)))
 
         ######################## Constraints ########################
         # add equality constraint to keep head upright
@@ -144,13 +122,16 @@ class DualG1Planner(Manager):
         pF = g1.get_global_link_position(link_head, Q)
         Qf = builder.get_model_state(self.g1_name, t=-1, time_deriv=0)
         # builder.add_equality_constraint("head_upright", pF, pg)
-        builder.add_equality_constraint("end_pose", Qf, q_f) 
+        # builder.add_equality_constraint("end_pose", Qf, q_f) 
 
         goal_eff_ang = optas.DM([0.0, 0.0, 0.0])
-        builder.add_equality_constraint("eff_vel", cart_vel_r[:3,-1], 2*v_ee)
-        builder.add_equality_constraint("eff_ang_vel", cart_vel_r[3:, -1], goal_eff_ang)
-        # builder.add_cost_term("velocity", -100*optas.sumsqr(cart_vel_r))
-        # builder.add_leq_inequality_constraint("eff_vel_upper", cart_vel_r[:3,-1], v_ee)
+        temp_vee = optas.DM([2.83203217, 0.77524903, 2.93622501])
+        # builder.add_equality_constraint("eff_vel", vel_ee, temp_vee, reduce_constraint=True)
+        builder.add_equality_constraint("eff_orientation", eff_y_axis[:,-1], mu_hat)
+        # builder.add_equality_constraint("eff_vel", cart_vel_r[:3,-1], mu_hat*v_0, reduce_constraint=True)
+        builder.add_equality_constraint("eff_ang_vel", cart_vel_r[3:, -1], goal_eff_ang, reduce_constraint=True)
+        builder.add_bound_inequality_constraint("torso_yaw", -1.57, torso_yaw(Q), 1.57)
+
         builder.add_leq_inequality_constraint("Tmax_lower", Tmax, 0.0)
         builder.add_leq_inequality_constraint("Tmax_upper", 1.0, Tmax)
         #######################################################
@@ -160,36 +141,9 @@ class DualG1Planner(Manager):
         # Cost: minimize joint velocity
         w_dq = 0.01
         w_q = 10
-        w = 100.0
+        w = 0.0
         # builder.add_cost_term("g1_min_join_vel_r", w_dq * optas.sumsqr(dQr))
         builder.add_cost_term("joint_accel_cost", w * optas.sumsqr(ddQ)) # minimize joint acceleration
-        # builder.add_cost_term('traj_length', 100*optas.sumsqr(Tmax))
-        # builder.add_cost_term("joint_pos_cost", w_q * optas.sumsqr(Q)) # Avoid negative joints
-        # builder.add_cost_term("head_pos_cost", w_q * optas.sumsqr(rot_head(Q) - optas.SX.zeros(g1.ndof, T))) # Avoid negative joints
-        # builder.add_cost_term("ee_velocity", 100*optas.sumsqr(cart_vel_r[:3,-1] - v_ee))
-        # Get start position for each arm
-        # pos0r = g1.get_global_link_position(link_ee_r, q0)
-        # qf = optas.SX.zeros(17, 1)
-        # ctrl_joints = [G1JntIdx.waist_y, G1JntIdx.r_elbow, G1JntIdx.r_shoulder_p]
-        # qf[G1JntIdx.waist_y] = 0.0
-        # qf[G1JntIdx.r_elbow] = optas.np.deg2rad(-10.0)
-        # qf[G1JntIdx.r_shoulder_p] = optas.np.deg2rad(-45.0)
-        # Q_lim = g1.get_limits(time_deriv=0)
-        # print("type: ", Q_lim)
-        # # Find approximate joint path
-        # path_rq = optas.SX.zeros(len(ctrl_joints), self.T)
-        # for i in range(self.T):
-        #     alpha = float(i)/float(self.T - 1)
-        #     for j, jnt in enumerate(ctrl_joints):
-        #         path_rq[j, i] = (qf[jnt] - q0[jnt])*optas.sin(alpha*optas.pi/2.0 - optas.pi/2.0) + qf[jnt]
-        #         # path_rq[j, i] = (1.0 - alpha)*q0[jnt] + alpha*qf[jnt]
-        #         # path_rq[j, i] = q0[jnt]
-        #         # print("i: ", i)
-        #         # print("\tpath: ", path_rq[j,i])
-        # w_jnt = 0.001
-        # builder.add_cost_term("jnt_path_r", w_jnt*optas.sumsqr(Q[ctrl_joints, :] - path_rq))
-        # builder.add_cost_term("jnt_val", 10*optas.sumsqr(Q_lim[0] - Q[:,-1]))
-
         # Setup solver
         solver = optas.CasADiSolver(builder.build()).setup("ipopt")
 
@@ -214,9 +168,9 @@ class DualG1Planner(Manager):
     def is_ready(self):
         return True
 
-    def reset(self, q0, v_ee, q_f):
+    def reset(self, q0, r_T):
         # Set parameters
-        self.solver.reset_parameters({"q0": optas.DM(q0), "v_ee": optas.DM(v_ee), "q_f": q_f})
+        self.solver.reset_parameters({"q0": optas.DM(q0), "r_targ": optas.DM(r_T)})
         Q0 = optas.diag(q0) @ optas.DM.ones(self.g1_ndof, self.T)
         self.solver.reset_initial_seed({f"{self.g1_name}/q/x": Q0})
 
@@ -246,10 +200,10 @@ def main(gui=True):
     # Setup robot
     robot = optas.RobotModel(urdf_filename)
     link_ee = "right_wrist_yaw_link"
-    ik_solver = G1ThrowSearch(robot, link_ee)
+    ik_solver = G1IK(robot, link_ee)
 
     # in order of: 
-    waist_y_jnt = -90.0
+    waist_y_jnt = -45.0
     waist_r_jnt = 0.0
     waist_p_jnt = 0.0
     l_shoulder_p_jnt = 0.0
@@ -260,7 +214,7 @@ def main(gui=True):
     l_wrist_p_jnt = 0.0
     l_wrist_y_jnt = 0.0
     r_shoulder_p_jnt = 45
-    r_shoulder_r_jnt = -30.0
+    r_shoulder_r_jnt = -45.0
     r_shoulder_y_jnt = 0.0
     r_elbow_jnt = 120
     r_wrist_r_jnt = 90
@@ -268,17 +222,21 @@ def main(gui=True):
     r_wrist_y_jnt = 0.0#-90.0
     q_0 = optas.np.deg2rad([waist_y_jnt, waist_r_jnt, waist_p_jnt, l_shoulder_p_jnt, l_shoulder_r_jnt, l_shoulder_y_jnt, l_elbow_jnt, l_wrist_r_jnt, l_wrist_p_jnt, l_wrist_y_jnt, r_shoulder_p_jnt, r_shoulder_r_jnt, r_shoulder_y_jnt, r_elbow_jnt, r_wrist_r_jnt, r_wrist_p_jnt, r_wrist_y_jnt])
     # q_0 = optas.np.zeros(17)
-
-    # r_T = [1, 0, 1]
+    ## get target position
+    x_T = [0.21, -0.49, 0.2]
+    x_T = [0.0, -0.55, 0.25]
+    r_T = [1, 0, 1]
     r_T = [0.5, 0, 0.5]
     
-    soln, soln_ee, soln_manip = ik_solver.SolveIK(optas.np.zeros(17), r_T)
-    soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
     ## Get end configuration, end velocity
-    quat_T, mu_hat, v_0 = CalcTrajParams(r_T, soln_ee)
+    # quat_T, mu_hat, v_0 = CalcTrajParams(r_T, x_T)
+    # print("release velocity: ", v_0)
+    # soln, soln_ee, soln_manip = ik_solver.SolveIK(x_T, quat_T, optas.np.zeros(17), r_T)
     
     # q_0 = soln
-    v_ee = mu_hat*v_0
+    # v_ee = mu_hat*v_0
+    # print('type: :', type(soln))
+    # print("release vector: ", v_ee)
     # soln = optas.DM.zeros(17, 1)
     ## plan trajectory with those as constraints
     ## Contraints: end pose, linear velocity, zero angular velocity, 
@@ -289,9 +247,9 @@ def main(gui=True):
     # vis.start()
 
     g1_dual_arm.reset(q_0)
-    dual_g1_planner.reset(q_0, v_ee, soln)
+    dual_g1_planner.reset(q_0, r_T)
     plan = dual_g1_planner.plan()
-    
+
     pb.start()
     pybullet_api.time.sleep(2.0)
     start_time = pybullet_api.time.time()

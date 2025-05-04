@@ -201,7 +201,8 @@ class DualG1Planner(Manager):
 
     def _setup_g1_model(self, name, base_position):
         cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
-        urdf_filename = os.path.join(cwd, "robots", "g1", "g1_dual_arm.urdf")
+        cwd = os.path.split(cwd)[0]
+        urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
         print("urdf_filename: ", urdf_filename)
         model = optas.RobotModel(
             urdf_filename=urdf_filename,
@@ -240,9 +241,9 @@ def main(gui=True):
     dt = 1.0 / float(hz)
     pb = pybullet_api.PyBullet(dt, gui=gui)
     g1_dual_arm = pybullet_api.G1DualArm(base_position=g1_base_position)
-    cwd = pathlib.Path(__file__).parent.resolve()  # path to current working directory
-
-    urdf_filename = os.path.join(cwd, "robots", "g1", "g1_dual_arm.urdf")
+    cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
+    cwd = os.path.split(cwd)[0]
+    urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
     # Setup robot
     robot = optas.RobotModel(urdf_filename)
     link_ee = "right_wrist_yaw_link"
