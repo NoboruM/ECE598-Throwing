@@ -1,6 +1,6 @@
 <mujoco model="g1_29dof scene">
   <include file="g1_29dof_with_psyonic_hand.xml"/>
-  <!-- <include file="clown.xml"/> -->
+  <include file="clown.xml"/>
   <statistic center="0 0 0.5" extent="2.0"/>
 
   <visual>

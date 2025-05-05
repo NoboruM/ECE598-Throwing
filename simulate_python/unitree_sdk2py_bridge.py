@@ -111,17 +111,19 @@ class UnitreeSdk2Bridge:
     def LowCmdHandler(self, msg: LowCmd_):
         if self.mj_data != None:
             for i in range(self.num_motor):
-                self.mj_data.ctrl[i] = (
-                    msg.motor_cmd[i].tau
-                    + msg.motor_cmd[i].kp
-                    * (msg.motor_cmd[i].q - self.mj_data.sensordata[i])
-                    + msg.motor_cmd[i].kd
-                    * (
-                        msg.motor_cmd[i].dq
-                        - self.mj_data.sensordata[i + self.num_motor]
+                if (i < 29):
+                    self.mj_data.ctrl[i] = (
+                        msg.motor_cmd[i].tau
+                        + msg.motor_cmd[i].kp
+                        * (msg.motor_cmd[i].q - self.mj_data.sensordata[i])
+                        + msg.motor_cmd[i].kd
+                        * (
+                            msg.motor_cmd[i].dq
+                            - self.mj_data.sensordata[i + self.num_motor]
+                        )
                     )
-                )
-
+                else:
+                    self.mj_data.ctrl[i] = msg.motor_cmd[i].q
     def PublishLowState(self):
         if self.mj_data != None:
             for i in range(self.num_motor):

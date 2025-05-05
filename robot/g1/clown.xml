@@ -14,7 +14,7 @@
 <worldbody>
   <body name="clownpin3" pos=" 3 -0.20 0.665">
     <joint type="free"/>
-    <geom name="hitbox3" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.1" rgba="1 0 0 0.5"/>
+    <geom name="hitbox3" type="cylinder" size="0.045 0.095" mass="0.014" pos="0 0 0.1" rgba="1 0 0 0"/>
     <geom type="mesh" mesh="clownbody" material="clownmaterial" euler="-55 -45.5 0" contype="0" conaffinity="0"/>
   </body>
 
@@ -49,12 +49,12 @@
   </body>
   
   <body name="shelf" pos="3 0 0" euler="0 0 1.5708 ">
-    <geom name="leftpanel" type="box" size="0.01 0.2 0.6" pos="-0.5 0 0.6" />
-    <geom name="rightpanel" type="box" size="0.01 0.2 0.6" pos="0.5 0 0.6"/>
-    <geom name="bottomshelf" type="box" size="0.5 0.2 0.01" pos="0 0 0.1"/>
-    <geom name="middleshelftopmost" type="box" size="0.5 0.2 0.01" pos="0 0 0.935"/>
-    <geom name="middleshelfbottommost" type="box" size="0.5 0.2 0.01" pos="0 0 0.655"/>
-    <geom name="topshelf" type="box" size="0.5 0.2 0.01" pos="0 0 1.2"/>
+    <geom name="leftpanel" type="box" size="0.01 0.1 0.6" pos="-0.5 0 0.6" />
+    <geom name="rightpanel" type="box" size="0.01 0.1 0.6" pos="0.5 0 0.6"/>
+    <geom name="bottomshelf" type="box" size="0.5 0.1 0.01" pos="0 0 0.1"/>
+    <geom name="middleshelftopmost" type="box" size="0.5 0.1 0.01" pos="0 0 0.935"/>
+    <geom name="middleshelfbottommost" type="box" size="0.5 0.1 0.01" pos="0 0 0.655"/>
+    <geom name="topshelf" type="box" size="0.5 0.1 0.01" pos="0 0 1.2"/>
 
   </body>
 

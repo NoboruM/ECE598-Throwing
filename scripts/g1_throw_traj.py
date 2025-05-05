@@ -9,36 +9,18 @@ from optas.templates import Manager
 
 # PyBullet
 import pybullet_api
-from g1_manip_search_v2 import G1ThrowSearch
-from g1_ik import CalcTrajParams
+from g1_manip_search_v2 import G1ThrowSearch, CalcTrajParams
 from optas.visualize import Visualizer
+import numpy as np
 
 g1_base_position = [0.0, 0.0, 0.5]
-
-class G1JntIdx:
-    waist_y = 0
-    waist_r = 1
-    waist_p = 2
-    l_shoulder_p = 3
-    l_shoulder_r = 4
-    l_shoulder_y = 5
-    l_elbow = 6
-    l_wrist_r = 7
-    l_wrist_p = 8
-    l_wrist_y = 9
-    r_shoulder_p = 10
-    r_shoulder_r = 11
-    r_shoulder_y = 12
-    r_elbow = 13
-    r_wrist_r = 14
-    r_wrist_p = 15
-    r_wrist_y = 16
 
 class DualG1Planner(Manager):
     def setup_solver(self):
         self.T_traj = 0.0
         # Parameters
-        self.T = 50
+        self.T = 100
+        self.T_half = 50
         link_ee_r = "right_wrist_yaw_link"
         link_head = "head_link"
 
@@ -59,6 +41,7 @@ class DualG1Planner(Manager):
         q0 = builder.add_parameter("q0", g1.ndof)
         v_ee = builder.add_parameter("v_ee", 3)
         q_f = builder.add_parameter("q_f", g1.ndof)
+        dq_release = builder.add_parameter("dq_release", g1.ndof)
 
         # Constraint: initial configuration
         builder.fix_configuration(self.g1_name, q0, t=0)
@@ -76,7 +59,7 @@ class DualG1Planner(Manager):
 
         ######################## Setup Obstacle Avoidance ########################
         # place obstacle at the torso
-        torso_position = g1.get_global_link_position('torso_link', optas.np.deg2rad([0.0]*17))
+        torso_position = g1.get_global_link_position('torso_link', optas.np.deg2rad([0.0]*g1.ndof))
         obs = optas.DM.zeros(3, 3)
         obs[:,0] = torso_position
         obs[:,1] = torso_position
@@ -147,8 +130,13 @@ class DualG1Planner(Manager):
         builder.add_equality_constraint("end_pose", Qf, q_f) 
 
         goal_eff_ang = optas.DM([0.0, 0.0, 0.0])
-        builder.add_equality_constraint("eff_vel", cart_vel_r[:3,-1], 2*v_ee)
-        builder.add_equality_constraint("eff_ang_vel", cart_vel_r[3:, -1], goal_eff_ang)
+        # builder.add_equality_constraint("eff_vel_release", cart_vel_r[:3,-1], 2*v_ee)
+        builder.add_equality_constraint("eff_vel_release", dQf, dq_release)
+        # builder.add_equality_constraint("eff_ang_vel_release", cart_vel_r[3:, -1], goal_eff_ang)
+
+        # builder.add_equality_constraint("dq_end", dQr[:,-1], optas.DM.zeros(17,1))
+        # builder.add_equality_constraint("q_end", Q[:,-1], optas.DM.zeros(17,1))
+        
         # builder.add_cost_term("velocity", -100*optas.sumsqr(cart_vel_r))
         # builder.add_leq_inequality_constraint("eff_vel_upper", cart_vel_r[:3,-1], v_ee)
         builder.add_leq_inequality_constraint("Tmax_lower", Tmax, 0.0)
@@ -160,35 +148,13 @@ class DualG1Planner(Manager):
         # Cost: minimize joint velocity
         w_dq = 0.01
         w_q = 10
-        w = 100.0
+        w = 1.0
         # builder.add_cost_term("g1_min_join_vel_r", w_dq * optas.sumsqr(dQr))
         builder.add_cost_term("joint_accel_cost", w * optas.sumsqr(ddQ)) # minimize joint acceleration
         # builder.add_cost_term('traj_length', 100*optas.sumsqr(Tmax))
         # builder.add_cost_term("joint_pos_cost", w_q * optas.sumsqr(Q)) # Avoid negative joints
         # builder.add_cost_term("head_pos_cost", w_q * optas.sumsqr(rot_head(Q) - optas.SX.zeros(g1.ndof, T))) # Avoid negative joints
         # builder.add_cost_term("ee_velocity", 100*optas.sumsqr(cart_vel_r[:3,-1] - v_ee))
-        # Get start position for each arm
-        # pos0r = g1.get_global_link_position(link_ee_r, q0)
-        # qf = optas.SX.zeros(17, 1)
-        # ctrl_joints = [G1JntIdx.waist_y, G1JntIdx.r_elbow, G1JntIdx.r_shoulder_p]
-        # qf[G1JntIdx.waist_y] = 0.0
-        # qf[G1JntIdx.r_elbow] = optas.np.deg2rad(-10.0)
-        # qf[G1JntIdx.r_shoulder_p] = optas.np.deg2rad(-45.0)
-        # Q_lim = g1.get_limits(time_deriv=0)
-        # print("type: ", Q_lim)
-        # # Find approximate joint path
-        # path_rq = optas.SX.zeros(len(ctrl_joints), self.T)
-        # for i in range(self.T):
-        #     alpha = float(i)/float(self.T - 1)
-        #     for j, jnt in enumerate(ctrl_joints):
-        #         path_rq[j, i] = (qf[jnt] - q0[jnt])*optas.sin(alpha*optas.pi/2.0 - optas.pi/2.0) + qf[jnt]
-        #         # path_rq[j, i] = (1.0 - alpha)*q0[jnt] + alpha*qf[jnt]
-        #         # path_rq[j, i] = q0[jnt]
-        #         # print("i: ", i)
-        #         # print("\tpath: ", path_rq[j,i])
-        # w_jnt = 0.001
-        # builder.add_cost_term("jnt_path_r", w_jnt*optas.sumsqr(Q[ctrl_joints, :] - path_rq))
-        # builder.add_cost_term("jnt_val", 10*optas.sumsqr(Q_lim[0] - Q[:,-1]))
 
         # Setup solver
         solver = optas.CasADiSolver(builder.build()).setup("ipopt")
@@ -215,9 +181,11 @@ class DualG1Planner(Manager):
     def is_ready(self):
         return True
 
-    def reset(self, q0, v_ee, q_f):
+    def reset(self, q0, v_ee, q_f, dqf):
         # Set parameters
-        self.solver.reset_parameters({"q0": optas.DM(q0), "v_ee": optas.DM(v_ee), "q_f": q_f})
+        print("TYPE: ", optas.DM(dqf))
+        self.solver.reset_parameters({"q0": optas.DM(q0), "v_ee": optas.DM(v_ee), "q_f": q_f, 'dq_release': optas.DM(dqf)})
+        # self.solver.reset_parameters({"q0": optas.DM(q0), "v_ee": optas.DM(v_ee), "q_f": q_f})
         Q0 = optas.diag(q0) @ optas.DM.ones(self.g1_ndof, self.T)
         self.solver.reset_initial_seed({f"{self.g1_name}/q/x": Q0})
 
@@ -227,14 +195,29 @@ class DualG1Planner(Manager):
     def plan(self):
         self.solve()
         solution = self.get_target()
-        print('solution: ', float(solution[f"Tmax"][0]))
         # Interpolate
         self.T_traj = float(solution[f"Tmax"][0]) 
-        plan = self.solver.interpolate(solution[f"{self.g1_name}/q"], self.T_traj)
+        plan_q = self.solver.interpolate(solution[f"{self.g1_name}/q"], self.T_traj)
+        plan_dq = self.solver.interpolate(solution[f"{self.g1_name}/dq"], self.T_traj)
+        return plan_q, plan_dq
+    
+    def Compute1PolyTraj(self, t, q0, dq0, qf, dqf, t0, tf):
+        A = np.array([
+            [1, t0, t0**2, t0**3],
+            [0, 1, 2*t0, 3*t0**2],
+            [1, tf, tf**2, tf**3],
+            [0, 1, 2*tf, 3*tf**2]
+        ])
+        B = np.array([q0, dq0, qf, dqf])
+        a0, a1, a2, a3  = np.linalg.solve(A, B)
+        return a0 + a1*t + a2*t**2 + a3*t**3
 
-        return plan
-
-
+    def ComputePolyThrowTraj(self, q0, dq0, qf, dqf, t0, tf):
+        t = np.arange(0, 2.0, 0.02)
+        self.plan_q = np.zeros((15, len(t)))
+        for i in range(15):
+            self.plan_q[i,:] = self.Compute1PolyTraj(t, q0[i], dq0[i], qf[i], dqf[i], t0, tf)
+        return self.plan_q
 def main(gui=True):
     dual_g1_planner = DualG1Planner()
     hz = 50
@@ -251,8 +234,8 @@ def main(gui=True):
 
     # in order of: 
     waist_y_jnt = -90.0
-    waist_r_jnt = 0.0
-    waist_p_jnt = 0.0
+    # waist_r_jnt = 0.0
+    # waist_p_jnt = 0.0
     l_shoulder_p_jnt = 0.0
     l_shoulder_r_jnt = 0.0
     l_shoulder_y_jnt = 0.0
@@ -267,18 +250,20 @@ def main(gui=True):
     r_wrist_r_jnt = 90
     r_wrist_p_jnt = 0.0
     r_wrist_y_jnt = 0.0#-90.0
-    q_0 = optas.np.deg2rad([waist_y_jnt, waist_r_jnt, waist_p_jnt, l_shoulder_p_jnt, l_shoulder_r_jnt, l_shoulder_y_jnt, l_elbow_jnt, l_wrist_r_jnt, l_wrist_p_jnt, l_wrist_y_jnt, r_shoulder_p_jnt, r_shoulder_r_jnt, r_shoulder_y_jnt, r_elbow_jnt, r_wrist_r_jnt, r_wrist_p_jnt, r_wrist_y_jnt])
-    # q_0 = optas.np.zeros(17)
-
+    q_0 = optas.np.deg2rad([waist_y_jnt, l_shoulder_p_jnt, l_shoulder_r_jnt, l_shoulder_y_jnt, l_elbow_jnt, l_wrist_r_jnt, l_wrist_p_jnt, l_wrist_y_jnt, r_shoulder_p_jnt, r_shoulder_r_jnt, r_shoulder_y_jnt, r_elbow_jnt, r_wrist_r_jnt, r_wrist_p_jnt, r_wrist_y_jnt])
+    # q_0 = optas.np.deg2rad([waist_y_jnt, waist_r_jnt, waist_p_jnt, l_shoulder_p_jnt, l_shoulder_r_jnt, l_shoulder_y_jnt, l_elbow_jnt, l_wrist_r_jnt, l_wrist_p_jnt, l_wrist_y_jnt, r_shoulder_p_jnt, r_shoulder_r_jnt, r_shoulder_y_jnt, r_elbow_jnt, r_wrist_r_jnt, r_wrist_p_jnt, r_wrist_y_jnt])
+    print("q_0: ", q_0.shape)
     # r_T = [1, 0, 1]
-    r_T = [0.5, 0, 0.5]
+    r_T = [2.0, 0, 0]
     
-    soln, soln_ee, soln_manip = ik_solver.SolveIK(optas.np.zeros(17), r_T)
+    soln, soln_ee, soln_manip, dqf = ik_solver.SolveIK(optas.np.zeros(robot.ndof), r_T)
+    # soln, soln_ee, soln_manip = ik_solver.SolveIK(optas.np.zeros(17), r_T)
     soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
     ## Get end configuration, end velocity
     quat_T, mu_hat, v_0 = CalcTrajParams(r_T, soln_ee)
-    
+    # 2.51106, 0, 0, 0, 0, 0, 0, 0, -4.87836, 0.730323, 0.0289881, -2.38707, -0.00207667, -0.167986, 02.51106, 0, 0, 0, 0, 0, 0, 0, -4.87836, 0.730323, 0.0289881, -2.38707, -0.00207667, -0.167986, 0
     # q_0 = soln
+    print("dqf: ", dqf*v_0)
     v_ee = mu_hat*v_0
     # soln = optas.DM.zeros(17, 1)
     ## plan trajectory with those as constraints
@@ -288,25 +273,31 @@ def main(gui=True):
     # vis.robot(robot, soln, alpha=1.0, show_links = True)
     # vis.grid_floor()
     # vis.start()
-
+    # dqf = optas.SX.zeros(17)
     g1_dual_arm.reset(q_0)
-    dual_g1_planner.reset(q_0, v_ee, soln)
-    plan = dual_g1_planner.plan()
+    dual_g1_planner.reset(q_0, v_ee, soln, dqf*v_0)
+    # dual_g1_planner.reset(q_0, v_ee, soln)
+    # plan_q, plan_dq = dual_g1_planner.plan()
+    soln = ((soln.full()).T)[0] # convert to numpy array 
+    dqf = ((dqf.full()).T)[0] # convert to numpy array 
+    plan_q = dual_g1_planner.ComputePolyThrowTraj(q_0, np.zeros(len(q_0)), soln, dqf, 0, 1.0)
     
     pb.start()
     pybullet_api.time.sleep(2.0)
     start_time = pybullet_api.time.time()
     traj_done = False
+    i = 0
     while True:
         t = pybullet_api.time.time() - start_time
         if not traj_done and t > dual_g1_planner.T_traj:
             print("done!")
             traj_done = True
         elif not traj_done:
-            g1_dual_arm.cmd(plan(t))
+            g1_dual_arm.cmd(plan_q[:,i])
             wrist_link_state = g1_dual_arm.GetLinkState(20, True, True) # get wrist yaw joint state
             print("Linear val: ", wrist_link_state[6])
             # print("Angular_val: ", wrist_link_state[7])
+            i += 1
         pybullet_api.time.sleep(dt*float(gui))
 
     pybullet_api.time.sleep(10.0*float(gui))

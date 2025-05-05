@@ -134,7 +134,6 @@ class VisualBox:
 
 class FixedBaseRobot:
     def __init__(self, urdf_filename, base_position=[0.0] * 3):
-        print("URDF: ", urdf_filename)
         self._id = p.loadURDF(
             fileName=urdf_filename, useFixedBase=1, basePosition=base_position
         )

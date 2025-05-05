@@ -145,6 +145,7 @@ class MujocoInterface:
             self.low_cmd.motor_cmd[joint.mode].tau = self.target_pos[i].tau
             self.low_cmd.motor_cmd[joint.mode].q = self.target_pos[i].q
             self.low_cmd.motor_cmd[joint.mode].dq = self.target_pos[i].dq
+            if (self.target_pos[i].kP != )
             self.low_cmd.motor_cmd[joint.mode].kp = self.target_pos[i].kp
             self.low_cmd.motor_cmd[joint.mode].kd = self.target_pos[i].kd
 

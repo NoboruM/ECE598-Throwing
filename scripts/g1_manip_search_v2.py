@@ -31,11 +31,11 @@ class G1ThrowSearch:
         self.eff_y_axis = robot.get_global_link_axis(eff_link, self.q_T, 'y')
 
         self.builder.add_bound_inequality_constraint("joint", q_min, self.q_T, q_max)
-        self.builder.add_bound_inequality_constraint("torso_yaw", -0.5, self.torso_rpy(self.q_T)[2,:], 0.5)
+        self.builder.add_bound_inequality_constraint("torso_yaw", -1.57, self.torso_rpy(self.q_T)[2,:], 1.57)
         # self.builder.add_bound_inequality_constraint("torso_roll", -0.174533, self.torso_roll(self.q_T)[0,:], 0.174533)
-        self.builder.add_equality_constraint("torso_roll", 0, self.torso_rpy(self.q_T)[0,:])
-        # self.builder.add_equality_constraint("torso_pitch", 0, self.torso_roll(self.q_T)[1,:])
-        self.builder.add_bound_inequality_constraint("torso_pitch", -0.174533, self.torso_rpy(self.q_T)[1,:], 0.174533)
+        # self.builder.add_equality_constraint("torso_roll", 0, self.torso_rpy(self.q_T)[0,:])
+        # self.builder.add_equality_constraint("torso_pitch", 0, self.torso_rpy(self.q_T)[1,:])
+        # self.builder.add_bound_inequality_constraint("torso_pitch", -0.174533, self.torso_rpy(self.q_T)[1,:], 0.174533)
 
         q_0 = self.builder.add_parameter("q_0", robot.ndof)  # initial robot joint configuration
         r_targ = self.builder.add_parameter("r_targ", 3)  # ball target position in world coordinates
@@ -54,6 +54,8 @@ class G1ThrowSearch:
         # self.builder.add_cost_term("cost", optas.sumsqr(self.q_T - q_0))
         # self.builder.add_cost_term("torso_tilt", 10*optas.sumsqr(optas.DM([0, 0, 0, 1]) - self.torso_quat(self.q_T)))
         self.builder.add_equality_constraint("eff_orientation", self.eff_y_axis, mu_hat)
+        self.builder.add_geq_inequality_constraint("release_position_x", r_ee[0], 0)
+        self.builder.add_leq_inequality_constraint("release_position_y", r_ee[1], 0)
 
         A = self.J@transpose(self.J)
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
@@ -83,18 +85,48 @@ class G1ThrowSearch:
         tmp[2] = Z
         mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
 
-        J = self.robot.get_global_link_linear_jacobian(self.eff_link, solution_casadi[f"{self.robot_name}/q"])
-        A = J@transpose(J)
+        J = self.robot.get_global_link_geometric_jacobian(self.eff_link, solution_casadi[f"{self.robot_name}/q"])
+        print("J shape; ", J[:3].shape)
+        A = J[:3,:]@transpose(J[:3,:])
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
-
+        lambda_ = 1e-3  # Damping coefficient
+        J_pinv_damped = transpose(J) @ optas.inv(J @ transpose(J) + lambda_ * SX.eye(J.shape[0]))
+        v_eff = optas.DM([mu_hat[0], mu_hat[1], mu_hat[2], 0, 0, 0])
+        unit_dq_f = J_pinv_damped @ v_eff 
+        unit_dq_f = optas.DM(unit_dq_f)
+        print("unitdq: ", unit_dq_f)
 
         print("***********************************")
         print("Casadi solution:")
         print("\t",solution_casadi[f"{self.robot_name}/q"] * (180.0 / optas.pi))
         print("end effector position: ", r_ee)
         print("manipulability score: ", mu_2)
-        return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2
+        return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2, unit_dq_f
       
+def CalcTrajParams(r_targ, x_T):
+    r_target = np.array(r_targ)
+    r_ee = np.array([x_T[0], x_T[1], x_T[2]])
+    r_e2T = r_target - r_ee
+    tmp = r_target - r_ee # vector from end effector to target
+    tmp[2] = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
+    Z = r_e2T[2]
+    mu_hat = tmp/np.linalg.norm(tmp) # unit launch direction vector
+    original_dir = np.array([0, 1, 0]) # align y axis with the direction
+    v_0 = np.sqrt(9.81*np.linalg.norm(tmp[:2])/(2*(mu_hat[2]*np.linalg.norm(tmp[:2]) - Z*np.linalg.norm(mu_hat[:2]))*np.linalg.norm(mu_hat[:2])))
+    # compute rotation axis and angle
+    cross = np.cross(original_dir, mu_hat)
+    axis = cross / np.linalg.norm(cross) if np.linalg.norm(cross) > 1e-6 else np.array([1, 0, 0])
+    angle = np.arccos(np.dot(original_dir, mu_hat))
+    
+    # Handle edge case (opposite vectors)
+    if angle < 1e-6:
+        return Rotation.identity()  # No rotation needed
+    if np.isclose(angle, np.pi):  # 180° rotation
+        axis = np.array([1, 0, 0]) if original_dir[0] != 0 else np.array([0, 1, 0])
+        
+    rot = Rotation.from_quat([*(axis * np.sin(angle/2)), np.cos(angle/2)])
+    return rot.as_quat(), mu_hat, v_0
+
 def main():
     cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
     cwd = os.path.split(cwd)[0]
@@ -149,7 +181,7 @@ def main():
     #     vis.robot(robot, soln, alpha=0.5)
     #     q_0 = soln
     r_targ = [2.0, 0, 0.5]
-    soln1, soln1_ee, soln1_manip = throw_pose_finder.SolveIK(q_0, r_targ)
+    soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_targ)
     # r_targ = [0.5, -0.5, 0.5]
     # soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(q_0, r_targ)
     vis.robot(robot, soln1, alpha=1.0, show_links = True, link_axis_scale=1.0)

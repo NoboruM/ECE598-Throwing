@@ -1,12 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<robot name="g1_29dof_with_hand">
-  <mujoco>
-    <compiler meshdir="meshes" discardvisual="false"/>
-  </mujoco>
-
+<?xml version="1.0" ?>
+<robot name="g1_dual_arm">
   <!-- [CAUTION] uncomment when convert to mujoco -->
   <!-- <link name="world"></link>
-  <joint name="floating_base_joint" type="floating">
+  <joint name="floating_base_joint" type="fixed">
     <parent link="world"/>
     <child link="pelvis"/>
   </joint> -->
@@ -219,7 +215,7 @@
   </joint>
 
   <!-- IMU -->
-  <link name="imu_in_torso"></link>
+  <!-- <link name="imu_in_torso"></link>
   <joint name="imu_in_torso_joint" type="fixed">
     <origin xyz="-0.03959 -0.00224 0.13792" rpy="0 0 0"/>
     <parent link="torso_link"/>
@@ -231,23 +227,23 @@
     <origin xyz="0.04525 0 -0.08339" rpy="0 0 0"/>
     <parent link="pelvis"/>
     <child link="imu_in_pelvis"/>
-  </joint>
+  </joint> -->
 
   <!-- d435 -->
-  <link name="d435_link"></link>
+  <!-- <link name="d435_link"></link>
   <joint name="d435_joint" type="fixed">
     <origin xyz="0.0576235 0.01753 0.41987" rpy="0 0.8307767239493009 0"/>
     <parent link="torso_link"/>
     <child link="d435_link"/>
-  </joint>
+  </joint> -->
 
   <!-- mid360 -->
-  <link name="mid360_link"></link>
+  <!-- <link name="mid360_link"></link>
   <joint name="mid360_joint" type="fixed">
     <origin xyz="0.0002835 0.00003 0.40618" rpy="0 0.04014257279586953 0"/>
     <parent link="torso_link"/>
     <child link="mid360_link"/>
-  </joint>
+  </joint> -->
 
   <!-- Arm -->
   <link name="left_shoulder_pitch_link">
@@ -277,7 +273,8 @@
     <parent link="torso_link"/>
     <child link="left_shoulder_pitch_link"/>
     <axis xyz="0 1 0"/>
-    <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37"/>
+    <limit lower="-1.57" upper="2.6704" effort="25" velocity="37"/>
+    <!-- <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37"/> -->
   </joint>
   <link name="left_shoulder_roll_link">
     <inertial>
@@ -453,11 +450,6 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_hand_palm_joint" type="fixed">
-    <origin xyz="0.0415 0.003 0" rpy="0 0 0"/>
-    <parent link="left_wrist_yaw_link"/>
-    <child link="left_hand_palm_link"/>
-  </joint>
   <link name="right_shoulder_pitch_link">
     <inertial>
       <origin xyz="0 -0.035892 -0.011628" rpy="0 0 0"/>
@@ -485,7 +477,8 @@
     <parent link="torso_link"/>
     <child link="right_shoulder_pitch_link"/>
     <axis xyz="0 1 0"/>
-    <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37"/>
+    <limit lower="-1.57" upper="2.6704" effort="25" velocity="37"/>
+    <!-- <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37"/> -->
   </joint>
   <link name="right_shoulder_roll_link">
     <inertial>
