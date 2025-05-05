@@ -5,7 +5,6 @@ import time
 import copy
 from g1_manip_search_v2 import G1ThrowSearch, CalcTrajParams
 import optas
-from g1_throw_traj import DualG1Planner
 import matplotlib.pyplot as plt
 
 class ThrowController:
@@ -44,8 +43,6 @@ class ThrowController:
         r_wrist_y_jnt = 0.0#-90.0
         self.q_0 = optas.np.deg2rad([waist_y_jnt, l_shoulder_p_jnt, l_shoulder_r_jnt, l_shoulder_y_jnt, l_elbow_jnt, l_wrist_r_jnt, l_wrist_p_jnt, l_wrist_y_jnt, r_shoulder_p_jnt, r_shoulder_r_jnt, r_shoulder_y_jnt, r_elbow_jnt, r_wrist_r_jnt, r_wrist_p_jnt, r_wrist_y_jnt])
 
-
-        self.dual_g1_planner = DualG1Planner()
         cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
         cwd = os.path.split(cwd)[0]
         urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
@@ -54,24 +51,6 @@ class ThrowController:
         link_ee = "right_wrist_yaw_link"
         self.ik_solver = G1ThrowSearch(self.robot, link_ee)
 
-    def CalculateTrajectory(self):
-        ##########################################################################
-        r_T = [2.0, 0, 0]
-        soln, soln_ee, soln_manip, dqf = self.ik_solver.SolveIK(optas.np.zeros(self.robot.ndof), r_T)
-        soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
-        ## Get end configuration, end velocity
-        quat_T, mu_hat, v_0 = CalcTrajParams(r_T, soln_ee)
-        print("calculated the trajectory")
-        print("v_0: ", v_0)
-        print("dqf: ", dqf)
-
-        v_ee = mu_hat*v_0
-        self.dual_g1_planner.reset(self.q_0,  v_ee, soln, v_0*dqf)
-        self.plan_q, self.plan_dq = self.dual_g1_planner.plan()
-        self.throw_time = self.dual_g1_planner.T_traj
-        self.traj_calculated = True
-        self.start_throw_t = self.time_
-        ##########################################################################
 
     def Compute1PolyTraj(self, t, q0, dq0, qf, dqf, t0, tf):
         A = np.array([
@@ -84,10 +63,10 @@ class ThrowController:
         a0, a1, a2, a3  = np.linalg.solve(A, B)
         return a0 + a1*t + a2*t**2 + a3*t**3
 
-    def ComputePolyThrowTraj(self):
+    def ComputePolyThrowTraj(self, r_T):
         pelvis_z = 0.793
         z_offset = pelvis_z - 0.5
-        r_T = [3.0, 0, 0.945 - z_offset]
+        r_T[3] = r_T[3] - z_offset
         soln, soln_ee, soln_manip, dqf = self.ik_solver.SolveIK(optas.np.zeros(self.robot.ndof), r_T)
         soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
         ## Get end configuration, end velocity
@@ -174,12 +153,11 @@ if __name__ == '__main__':
         ChannelFactoryInitialize(0, sys.argv[1])
     else:
         ChannelFactoryInitialize(1, "lo")
-
+    r_T = [3, 0, 1]
     controller = ThrowController()
     controller.Init()
     controller.Start()
-    controller.ComputePolyThrowTraj()
-    # controller.CalculateTrajectory()
+    controller.ComputePolyThrowTraj(r_T)
 
     while True:        
         time.sleep(1)
