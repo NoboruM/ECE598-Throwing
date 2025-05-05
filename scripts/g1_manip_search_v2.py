@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 import optas
 from optas.visualize import Visualizer
 
-class G1IK:
+class G1ThrowSearch:
     def __init__(self, robot, eff_link, base_link=None):
         self.robot = robot
         self.robot_name = robot.get_name()
@@ -20,7 +20,7 @@ class G1IK:
         self.fk = robot.get_global_link_position_function(link=eff_link)
         self.quat = robot.get_global_link_quaternion_function(link=eff_link)
         self.torso_quat = robot.get_global_link_quaternion_function(link="torso_link")
-        self.torso_yaw = robot.get_global_link_rpy_function(link="torso_link")
+        self.torso_rpy = robot.get_global_link_rpy_function(link="torso_link")
         limits = robot.get_limits(time_deriv=0)
         q_min = limits[0]
         q_max = limits[1]
@@ -31,11 +31,13 @@ class G1IK:
         self.eff_y_axis = robot.get_global_link_axis(eff_link, self.q_T, 'y')
 
         self.builder.add_bound_inequality_constraint("joint", q_min, self.q_T, q_max)
-        self.builder.add_bound_inequality_constraint("torso_yaw", -1.57, self.torso_yaw(self.q_T), 1.57)
+        self.builder.add_bound_inequality_constraint("torso_yaw", -1.57, self.torso_rpy(self.q_T)[2,:], 1.57)
+        # self.builder.add_bound_inequality_constraint("torso_roll", -0.174533, self.torso_roll(self.q_T)[0,:], 0.174533)
+        # self.builder.add_equality_constraint("torso_roll", 0, self.torso_rpy(self.q_T)[0,:])
+        # self.builder.add_equality_constraint("torso_pitch", 0, self.torso_rpy(self.q_T)[1,:])
+        # self.builder.add_bound_inequality_constraint("torso_pitch", -0.174533, self.torso_rpy(self.q_T)[1,:], 0.174533)
 
         q_0 = self.builder.add_parameter("q_0", robot.ndof)  # initial robot joint configuration
-        x_T = self.builder.add_parameter("x_T", 3)  # target position
-        theta_T = self.builder.add_parameter("theta_T", 4)  # target ee orientation
         r_targ = self.builder.add_parameter("r_targ", 3)  # ball target position in world coordinates
 
 
@@ -49,12 +51,11 @@ class G1IK:
         mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
 
 
-        self.builder.add_cost_term("cost", optas.sumsqr(self.q_T - q_0))
-        self.builder.add_cost_term("torso_tilt", 10*optas.sumsqr(optas.DM([0, 0, 0, 1]) - self.torso_quat(self.q_T)))
-
-        self.builder.add_equality_constraint("FK", self.fk(self.q_T), x_T)
-        # self.builder.add_equality_constraint("FK_orientation", self.quat(self.q_T), theta_T)
+        # self.builder.add_cost_term("cost", optas.sumsqr(self.q_T - q_0))
+        # self.builder.add_cost_term("torso_tilt", 10*optas.sumsqr(optas.DM([0, 0, 0, 1]) - self.torso_quat(self.q_T)))
         self.builder.add_equality_constraint("eff_orientation", self.eff_y_axis, mu_hat)
+        self.builder.add_geq_inequality_constraint("release_position_x", r_ee[0], 0)
+        self.builder.add_leq_inequality_constraint("release_position_y", r_ee[1], 0)
 
         A = self.J@transpose(self.J)
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
@@ -64,13 +65,11 @@ class G1IK:
         # setup solver
         self.solver_casadi = optas.CasADiSolver(self.builder.build()).setup("ipopt", {"ipopt.print_level": 0})
 
-    def SolveIK(self, x_T, theta_T, q_0, r_targ):
+    def SolveIK(self, q_0, r_targ):
 
         # Set parameters
         self.solver_casadi.reset_parameters({
             "q_0": optas.DM(q_0),
-            "x_T": x_T,
-            "theta_T": theta_T,
             "r_targ": r_targ})
 
         # set initial seed
@@ -86,17 +85,23 @@ class G1IK:
         tmp[2] = Z
         mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
 
-        J = self.robot.get_global_link_linear_jacobian(self.eff_link, solution_casadi[f"{self.robot_name}/q"])
-        A = J@transpose(J)
+        J = self.robot.get_global_link_geometric_jacobian(self.eff_link, solution_casadi[f"{self.robot_name}/q"])
+        print("J shape; ", J[:3].shape)
+        A = J[:3,:]@transpose(J[:3,:])
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
-
+        lambda_ = 1e-3  # Damping coefficient
+        J_pinv_damped = transpose(J) @ optas.inv(J @ transpose(J) + lambda_ * SX.eye(J.shape[0]))
+        v_eff = optas.DM([mu_hat[0], mu_hat[1], mu_hat[2], 0, 0, 0])
+        unit_dq_f = J_pinv_damped @ v_eff 
+        unit_dq_f = optas.DM(unit_dq_f)
+        print("unitdq: ", unit_dq_f)
 
         print("***********************************")
         print("Casadi solution:")
         print("\t",solution_casadi[f"{self.robot_name}/q"] * (180.0 / optas.pi))
         print("end effector position: ", r_ee)
         print("manipulability score: ", mu_2)
-        return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2
+        return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2, unit_dq_f
       
 def CalcTrajParams(r_targ, x_T):
     r_target = np.array(r_targ)
@@ -123,15 +128,15 @@ def CalcTrajParams(r_targ, x_T):
     return rot.as_quat(), mu_hat, v_0
 
 def main():
-    cwd = pathlib.Path(__file__).parent.resolve()  # path to current working directory
-
-    urdf_filename = os.path.join(cwd, "robots", "g1", "g1_dual_arm.urdf")
+    cwd = pathlib.Path( __file__).parent.resolve()  # path to current working directory
+    cwd = os.path.split(cwd)[0]
+    urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
     # Setup robot
     robot = optas.RobotModel(urdf_filename)
     robot_name = robot.get_name()
     link_ee = "right_wrist_yaw_link"  # end-effector link name
 
-    ik_solver = G1IK(robot, link_ee)
+    throw_pose_finder = G1ThrowSearch(robot, link_ee)
 
     # theta_T = [0, 0, 0.3826834, 0.9238795] # target end-effector orientation
     waist_y_jnt = 0.0
@@ -175,16 +180,12 @@ def main():
     #     soln = ik_solver.SolveIK([0.1 + i/20.0, 0, 0.2], theta_T, q_0)
     #     vis.robot(robot, soln, alpha=0.5)
     #     q_0 = soln
-
-    x_T = [0.0, -0.4, 0.2]  # target end-effector position in global frame
-    # x_T = [0.21, -0.49, 0.2]
-    r_targ = [2, 0, 1]
-    quat_T, mu_hat, v_0 = CalcTrajParams(r_targ, x_T)
-    soln1, soln1_ee, soln1_manip = ik_solver.SolveIK(x_T, quat_T, q_0, r_targ)
+    r_targ = [2.0, 0, 0.5]
+    soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_targ)
     # r_targ = [0.5, -0.5, 0.5]
-    # quat_T, mu_hat, v_0 = CalcTrajParams(r_targ, x_T)
-    # soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(x_T, quat_T, q_0, r_targ)
-    vis.robot(robot, soln1, alpha=1.0, show_links = True)
+    # soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(q_0, r_targ)
+    vis.robot(robot, soln1, alpha=1.0, show_links = True, link_axis_scale=1.0)
+    vis.sphere(position=r_targ, radius=0.05, alpha=0.8, rgb=[1, 0, 0])
     # vis.robot(robot, soln2, alpha=0.75, )
     vis.grid_floor()
     vis.start()

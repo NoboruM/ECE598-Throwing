@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	NOTES:
+	Units:
+		Distance: m
+		Angles: rad (only option)
+		Mass: kg
+		Inertia: kg*m^2
+		
+	Notes on intertia:
+		-The inertias are calculated for uniform density using /home/noboru/KIMLAB_WS/G1_ws/src/unitree_mujoco/unitree_robots/g1/meshes with weights.
+	
+	Notes on finger q2:
+		-The hand is a 4 bar linkage mechanism forming an 'X'. 4 bar linkages are not supported in the 
+		urdf format. The motion of the second finger joint is fully defined by the motion of the first 
+		finger joint. The calculation to find the index finger second joint angle given the first is provided
+		in a matlab script elsewhere in this repository.
+-->
+<robot name="left_ability_hand">
+<mujoco>
+  <compiler balanceinertia="true" />
+</mujoco>
+        <link name="world">
+            <visual name="world">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="wristmesh.STL"/>
+                </geometry>
+            </visual>		
+            <collision name="world">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="wristmesh.STL"/>
+                </geometry>
+            </collision>
+            <inertial>	<!-- the mass and inertia here are NOT correct -->
+                <mass value = "0.200"/>
+                <inertia ixx="978.26e-6" ixy = "87.34e-6" ixz = "322.99e-6" iyy = "1244.78e-6" iyz = "244.74e-6" izz = "456.22e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+        </link>
+        <joint name="world2hand_base"  type="fixed">
+            <parent link="world"/>
+            <child link="left_hand_base"/>
+            <origin xyz="0.042 0 0" rpy="-1.57 -1.57 -1.57"/>
+        </joint>
+        <link name="left_hand_base">
+            <visual name="left_hand_wrist_mesh">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="wristmesh.STL"/>
+                </geometry>
+            </visual>		
+            <collision name="left_hand_wrist_mesh">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="wristmesh.STL"/>
+                </geometry>
+            </collision>
+            <inertial>	<!-- the mass and inertia here are NOT correct -->
+                <mass value = "0.200"/>
+                <inertia ixx="978.26e-6" ixy = "87.34e-6" ixz = "322.99e-6" iyy = "1244.78e-6" iyz = "244.74e-6" izz = "456.22e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+        </link>
+        <joint name="left_hand_wrist2thumb" type="fixed">
+            <parent link="left_hand_base"/>
+            <child link="left_hand_thumb_base"/>
+            <origin xyz = "24.0476665e-3 3.78124745e-3 32.32964923e-3" rpy = "3.14148426 0.08848813 3.14036612"/>
+        </joint>
+
+
+        <link name="left_hand_thumb_base" >
+            <inertial>
+                <mass value = "0.400"/>
+                <inertia ixx="978.26e-6" ixy = "87.34e-6" ixz = "322.99e-6" iyy = "1244.78e-6" iyz = "244.74e-6" izz = "456.22e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+                            
+            <visual name="left_hand_palm_mesh">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="FB_palm_ref.STL"/>
+                </geometry>
+            </visual>	
+
+            <collision name="left_hand_palm_mesh">
+                <origin rpy = "0 0 0" xyz = "0 0 0"/>
+                <geometry>
+                    <mesh filename="FB_palm_ref.STL"/>
+                </geometry>
+            </collision>		
+        </link>
+        
+        
+        
+        <link name="left_hand_index_L1" >
+            <inertial>
+                <mass value = "0.00635888"/>
+                <inertia ixx="0.29766e-6" ixy = "-0.06447133e-6" ixz = "-0.00423315e-6" iyy = "3.6947967e-6" iyz = "0.00083028e-6" izz = "3.8176336e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+            <visual name="left_hand_index_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </visual>
+
+            <collision name="left_hand_index_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </collision>
+        </link>
+        <link name="left_hand_index_L2" >
+            <inertial>
+                <mass value = "0.00645"/>
+                <inertia ixx="0.82671e-6" ixy = "-1.08876e-6" ixz = "-0.00037e-6" iyy = "1.98028e-6" iyz = "0.00081e-6" izz = "2.64638e-6" />
+                <origin rpy = "0 0 0" xyz = "13.36818e-3 -8.75392e-3 -0.02886e-3"/>
+            </inertial>		
+            <visual name="left_hand_index_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_index_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </collision>
+        </link>	
+        <joint name="left_hand_index_q1" type="revolute">
+            <parent link="left_hand_thumb_base"/>
+            <child link="left_hand_index_L1"/>
+            <origin xyz = "-9.49e-3 -13.04e-3 -62.95e-3" rpy = "-1.982050 1.284473 -2.090591" />
+            <axis xyz="0 0 1"/>
+            <limit lower = "0" upper = "2.0943951" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+        </joint>
+
+        <joint name="left_hand_index_q2" type="revolute">
+            <parent link="left_hand_index_L1"/>
+            <child link="left_hand_index_L2"/>
+            <origin xyz = "38.472723e-3 3.257695e-3 0.000000e-3" rpy = "0 0 0.084474"/>
+            <axis xyz="0 0 1"/>
+            <limit lower = "0.0" upper = "2.6586" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <mimic joint = "left_hand_index_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
+        </joint>
+
+        <link name="left_hand_index_anchor"/>
+        <joint name="left_hand_idx_anchor" type="fixed">
+            <parent link = "left_hand_index_L2"/>
+            <child link = "left_hand_index_anchor"/>
+            <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
+        </joint>
+
+
+        
+
+        <link name="left_hand_middle_L1" >
+            <inertial>
+                <mass value = "0.00635888"/>
+                <inertia ixx="0.29766e-6" ixy = "-0.06447133e-6" ixz = "-0.00423315e-6" iyy = "3.6947967e-6" iyz = "0.00083028e-6" izz = "3.8176336e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+            
+            <visual name="left_hand_middle_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </visual>
+
+            <collision name="left_hand_middle_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </collision>            
+        </link>
+        <link name="left_hand_middle_L2" >
+            <inertial>
+                <mass value = "0.00645"/>
+                <inertia ixx="0.82671e-6" ixy = "-1.08876e-6" ixz = "-0.00037e-6" iyy = "1.98028e-6" iyz = "0.00081e-6" izz = "2.64638e-6" />
+                <origin rpy = "0 0 0" xyz = "13.36818e-3 -8.75392e-3 -0.02886e-3"/>
+            </inertial>
+            <visual name="left_hand_middle_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_middle_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </collision>
+        
+        </link>
+        <joint name="left_hand_middle_q1" type="revolute">
+            <parent link="left_hand_thumb_base"/>
+            <child link="left_hand_middle_L1"/>
+            <origin xyz = "9.653191e-3 -15.310271e-3 -67.853949e-3" rpy = "-1.860531 1.308458 -1.896217" />
+            <limit lower = "0" upper = "2.0943951" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <axis xyz="0 0 1"/>
+        </joint>
+
+        <joint name="left_hand_middle_q2" type="revolute">
+            <parent link="left_hand_middle_L1"/>
+            <child link="left_hand_middle_L2"/>
+            <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+            <axis xyz="0 0 1"/>
+            <limit lower = "0.0" upper = "2.6586" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <mimic joint = "left_hand_middle_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
+        </joint>
+
+        <link name="left_hand_middle_anchor"/>
+        <joint name="left_hand_mid_anchor" type="fixed">
+            <parent link = "left_hand_middle_L2"/>
+            <child link = "left_hand_middle_anchor"/>
+            <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
+        </joint>
+
+
+        <link name="left_hand_ring_L1" >
+            <inertial>
+                <mass value = "0.00635888"/>
+                <inertia ixx="0.29766e-6" ixy = "-0.06447133e-6" ixz = "-0.00423315e-6" iyy = "3.6947967e-6" iyz = "0.00083028e-6" izz = "3.8176336e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+            
+            <visual name="left_hand_ring_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_ring_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </collision>
+        </link>
+        <link name="left_hand_ring_L2" >
+            <inertial>
+                <mass value = "0.00645"/>
+                <inertia ixx="0.82671e-6" ixy = "-1.08876e-6" ixz = "-0.00037e-6" iyy = "1.98028e-6" iyz = "0.00081e-6" izz = "2.64638e-6" />
+                <origin rpy = "0 0 0" xyz = "13.36818e-3 -8.75392e-3 -0.02886e-3"/>
+            </inertial>
+            <visual name="left_hand_ring_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </visual>	
+            <collision name="left_hand_ring_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </collision>		
+        </link>
+        <joint name="left_hand_ring_q1" type="revolute">
+            <parent link="left_hand_thumb_base"/>
+            <child link="left_hand_ring_L1"/>
+            <origin xyz = "29.954260e-3 -14.212492e-3 -67.286105e-3" rpy = "-1.716598 1.321452 -1.675862" />
+            <limit lower = "0" upper = "2.0943951" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <axis xyz="0 0 1"/>
+        </joint>
+
+        <joint name="left_hand_ring_q2" type="revolute">
+            <parent link="left_hand_ring_L1"/>
+            <child link="left_hand_ring_L2"/>
+            <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+            <axis xyz="0 0 1"/>
+            <limit lower = "0.0" upper = "2.6586" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <mimic joint = "left_hand_ring_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
+        </joint>
+
+        <link name="left_hand_ring_anchor"/>
+        <joint name="left_hand_rng_anchor" type="fixed">
+            <parent link = "left_hand_ring_L2"/>
+            <child link = "left_hand_ring_anchor"/>
+            <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
+        </joint>
+
+
+
+
+        <link name="left_hand_pinky_L1" >
+            <inertial>
+                <mass value = "0.00635888"/>
+                <inertia ixx="0.29766e-6" ixy = "-0.06447133e-6" ixz = "-0.00423315e-6" iyy = "3.6947967e-6" iyz = "0.00083028e-6" izz = "3.8176336e-6" />
+                <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+            </inertial>
+            
+            <visual name="left_hand_pinky_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_pinky_mesh_1">
+                <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+                <geometry>
+                    <mesh filename="idx-F1.STL"/>
+                </geometry>
+            </collision>
+        </link>
+        <link name="left_hand_pinky_L2" >
+            <inertial>
+                <mass value = "0.00645"/>
+                <inertia ixx="0.82671e-6" ixy = "-1.08876e-6" ixz = "-0.00037e-6" iyy = "1.98028e-6" iyz = "0.00081e-6" izz = "2.64638e-6" />
+                <origin rpy = "0 0 0" xyz = "13.36818e-3 -8.75392e-3 -0.02886e-3"/>
+            </inertial>
+            <visual name="left_hand_pinky_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </visual>	
+            <collision name="left_hand_pinky_mesh_2">
+                <origin rpy = "0 0 0" xyz = "9.1241e-3 0 0"/>
+                <geometry>
+                    <mesh filename="idx-F2.STL"/>
+                </geometry>
+            </collision>	
+        </link>
+        <joint name="left_hand_pinky_q1" type="revolute">
+            <parent link="left_hand_thumb_base"/>
+            <child link="left_hand_pinky_L1"/>
+            <origin xyz = "49.521293e-3 -11.004583e-3 -63.029065e-3" rpy = "-1.765110 1.322220 -1.658383" />
+            <limit lower = "0" upper = "2.0943951" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <axis xyz="0 0 1"/>
+        </joint>
+
+        <joint name="left_hand_pinky_q2" type="revolute">
+            <parent link="left_hand_pinky_L1"/>
+            <child link="left_hand_pinky_L2"/>
+            <origin xyz = "38.472723e-3 3.257695e-3 0.000000" rpy = "0 0 0.084474"/>
+            <limit lower = "0.0" upper = "2.6586" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+            <axis xyz="0 0 1"/>
+            <mimic joint = "left_hand_pinky_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
+        </joint>
+
+        <link name="left_hand_pinky_anchor"/>
+        <joint name="left_hand_pnky_anchor" type="fixed">
+            <parent link = "left_hand_pinky_L2"/>
+            <child link = "left_hand_pinky_anchor"/>
+            <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
+        </joint>
+
+
+
+
+        <link name="left_hand_thumb_L1" >
+            <inertial>
+                <mass value = "0.00268342"/>
+                <inertia ixx="0.16931e-6" ixy = "-0.076214e-6" ixz = "-0.16959148e-6" iyy = "0.77769934e-6" iyz = "0.0156622e-6" izz = "0.7249122e-6" />
+                <origin rpy = "0 0 0" xyz = "14.606e-3 -1.890854e-3 -3.1155356e-3"/>
+            </inertial>
+            
+            <visual name="left_hand_thumb_mesh_1">
+                <origin xyz = "27.8283501e-3 0 -14.7507000e-3" rpy = "4.450589592585541 0 0" />
+                <geometry>
+                    <mesh filename="thumb-F1.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_thumb_mesh_1">
+                <origin xyz = "27.8283501e-3 0 -14.7507000e-3" rpy = "4.450589592585541 0 0" />
+                <geometry>
+                    <mesh filename="thumb-F1.STL"/>
+                </geometry>
+            </collision>
+            
+        </link>
+        <link name="left_hand_thumb_L2" >
+            <inertial>
+                <mass value = "0.0055"/>
+                <inertia ixx="4.4789082e-6" ixy = "4.4789082e-6" ixz = "-0.62144934e-6" iyy = "15.600996e-6" iyz = "-0.07466143e-6" izz = "17.908554e-6" />
+                <origin rpy = "0 0 0" xyz = "30.020522e-3 5.59476e-3 -4.1504356e-3"/>
+            </inertial>
+            
+            <visual name="left_hand_thumb_mesh_2">
+                <origin xyz = "65.18669e-3 23.34021e-3 -3.93483e-3" rpy = "3.141592 0 0.343830"/>
+                <geometry>
+                    <mesh filename="thumb-F2.STL"/>
+                </geometry>
+            </visual>
+            <collision name="left_hand_thumb_mesh_2">
+                <origin xyz = "65.18669e-3 23.34021e-3 -3.93483e-3" rpy = "3.141592 0 0.343830"/>
+                <geometry>
+                    <mesh filename="thumb-F2.STL"/>
+                </geometry>
+            </collision>
+            
+        </link>
+        <joint name="left_hand_thumb_q1" type="revolute">
+            <parent link="left_hand_thumb_base"/>
+            <child link="left_hand_thumb_L1"/>
+            <origin xyz = "0 0 0" rpy = "0 0 3.330437"/>
+            <axis xyz="0 0 1"/>
+            <limit lower = "-2.0943951" upper = "0" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
+        </joint>
+
+        <joint name="left_hand_thumb_q2" type="revolute">
+            <parent link="left_hand_thumb_L1"/>
+            <child link="left_hand_thumb_L2"/>
+            <origin xyz = "27.8283501e-3 0 -14.7507000e-3" rpy = "4.450589592585541 0 0" />
+            <axis xyz="0 0 1"/>
+            <limit lower = "0" upper = "2.0943951" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
+            <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->		
+        </joint>
+
+        <link name="left_hand_thumb_anchor"/>
+        <joint name="left_hand_thmb_anchor" type="fixed">
+            <parent link = "left_hand_thumb_L2"/>
+            <child link = "left_hand_thumb_anchor"/>
+            <origin rpy = "0 0 0" xyz = "52.0012259e-3  28.0086971e-3 -.884835778e-3"/>
+        </joint>
+
+</robot>

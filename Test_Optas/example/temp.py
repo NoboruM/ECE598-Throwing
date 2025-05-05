@@ -1,8 +1,6 @@
 import numpy as np
 
-x = 6
-y = 2
-theta = np.pi/4.0
-g = 9.81
-v = np.sqrt((x**2 * g)/(x*np.sin(2*theta) - 2*y*(np.cos(theta))**2))
-print("v: ", v)
+
+for i, v in enumerate(np.arange(0.2, 0.5, 0.01)):
+    print("i: ", i)
+    print("v: ", v)

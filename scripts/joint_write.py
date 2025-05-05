@@ -87,14 +87,14 @@ class MujocoInterface:
         self.counter_ = 0
         self.weight = 0.
         self.weight_rate = 0.2
-        self.arm_kp = 40 # 50
-        self.arm_kd = 1.0# 1.5
+        self.shoulder_kp = 125 
+        self.shoulder_kd = 2.0
         self.hand_kp = 40.0
         self.hand_kd = 0.4
-        self.leg_kp = 40 
+        self.leg_kp = 100
         self.leg_kd = 0.5
-        self.torso_kp = 40 
-        self.torso_kd = 1.0
+        self.torso_kp = 300 
+        self.torso_kd = 5.0
         self.dq = 0.
         self.tau_ff = 0.
         self.mode_machine_ = 0
@@ -117,23 +117,23 @@ class MujocoInterface:
             MotorCmd_(G1JointIndex.RightKnee, 0.0, 0.0, 0.0, 100, 2.0, 0),
             MotorCmd_(G1JointIndex.RightAnklePitch, 0.0, 0.0, 0.0, 40, 1.0, 0),
             MotorCmd_(G1JointIndex.RightAnkleRoll, 0.0, 0.0, 0.0, 40, 1.0, 0),
-            MotorCmd_(G1JointIndex.WaistYaw, 0.0, 0.0, 0.0, 60, self.torso_kd, 0),
-            MotorCmd_(G1JointIndex.WaistRoll, 0.0, 0.0, 0.0, 40, self.torso_kd, 0),
-            MotorCmd_(G1JointIndex.WaistPitch, 0.0, 0.0, 0.0, 40, self.torso_kd, 0),
-            MotorCmd_(G1JointIndex.LeftShoulderPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.LeftShoulderRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.LeftShoulderYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.LeftElbow, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.LeftWristRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.LeftWristPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0), 
-            MotorCmd_(G1JointIndex.LeftWristYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightShoulderPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightShoulderRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightShoulderYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightElbow, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightWristRoll, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightWristPitch, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
-            MotorCmd_(G1JointIndex.RightWristYaw, 0.0, 0.0, 0.0, self.arm_kp, self.arm_kd, 0),
+            MotorCmd_(G1JointIndex.WaistYaw, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistRoll, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.WaistPitch, 0.0, 0.0, 0.0, self.torso_kp, self.torso_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderPitch, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderRoll, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.LeftShoulderYaw, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.LeftElbow, 0.0, 0.0, 0.0, 100, 1.0, 0),
+            MotorCmd_(G1JointIndex.LeftWristRoll, 0.0, 0.0, 0.0, 10, 0.5, 0),
+            MotorCmd_(G1JointIndex.LeftWristPitch, 0.0, 0.0, 0.0, 10, 0.5, 0), 
+            MotorCmd_(G1JointIndex.LeftWristYaw, 0.0, 0.0, 0.0, 5, 0.5, 0),
+            MotorCmd_(G1JointIndex.RightShoulderPitch, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.RightShoulderRoll, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.RightShoulderYaw, 0.0, 0.0, 0.0, self.shoulder_kp, self.shoulder_kd, 0),
+            MotorCmd_(G1JointIndex.RightElbow, 0.0, 0.0, 0.0, 100, 1.0, 0),
+            MotorCmd_(G1JointIndex.RightWristRoll, 0.0, 0.0, 0.0, 10, 0.5, 0),
+            MotorCmd_(G1JointIndex.RightWristPitch, 0.0, 0.0, 0.0, 10, 0.5, 0),
+            MotorCmd_(G1JointIndex.RightWristYaw, 0.0, 0.0, 0.0, 5, 0.5, 0),
             MotorCmd_(G1JointIndex.RightHandIndex, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.RightHandMiddle, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
             MotorCmd_(G1JointIndex.RightHandRing, 0.0, 0.0, 0.0, self.hand_kp, self.hand_kd, 0),
@@ -181,8 +181,9 @@ class MujocoInterface:
             self.low_cmd.motor_cmd[joint.mode].tau = self.target_pos[i].tau
             self.low_cmd.motor_cmd[joint.mode].q = self.target_pos[i].q
             self.low_cmd.motor_cmd[joint.mode].dq = self.target_pos[i].dq
-            self.low_cmd.motor_cmd[joint.mode].kp = self.target_pos[i].kp
-            self.low_cmd.motor_cmd[joint.mode].kd = self.target_pos[i].kd
+            if (self.target_pos[i].kp != self.hand_kp):
+                self.low_cmd.motor_cmd[joint.mode].kp = self.target_pos[i].kp
+                self.low_cmd.motor_cmd[joint.mode].kd = self.target_pos[i].kd
 
         self.low_cmd.crc = self.crc.Crc(self.low_cmd)
         self.arm_sdk_publisher.Write(self.low_cmd)
