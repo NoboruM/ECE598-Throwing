@@ -654,4 +654,95 @@
       </geometry>
     </collision>
   </link>
+  <!-- Adding the Psyonic Hand -->
+  <!-- Adding the Psyonic Hand -->
+  <!-- Adding the Psyonic Hand -->
+  <!-- Adding the Psyonic Hand -->
+  <!-- Adding the Psyonic Hand -->
+  <!-- Adding the Psyonic Hand -->
+
+    <joint name="g1_wrist_2_hand_base"  type="fixed">
+        <parent link="right_wrist_yaw_link"/>
+        <child link="right_hand_base"/>
+        <origin xyz="0.042 0 0" rpy="0 1.57 0"/>
+    </joint>
+    
+    <link name="right_hand_base">
+        <visual name="right_hand_wrist_mesh">
+            <origin rpy = "0 0 0" xyz = "0 0 0"/>
+            <geometry>
+                <mesh filename="meshes/wristmesh.STL"/>
+            </geometry>
+            <material name="white">
+              <color rgba="0.7 0.7 0.7 1"/>
+            </material>
+        </visual>	
+        <collision name="right_hand_wrist_mesh">
+            <origin rpy = "0 0 0" xyz = "0 0 0"/>
+            <geometry>
+                <mesh filename="meshes/wristmesh.STL"/>
+            </geometry>
+        </collision>	
+        <inertial>	<!-- the mass and inertia here are NOT correct -->
+            <mass value = "0.200"/>
+            <inertia ixx="978.26e-6" ixy = "87.34e-6" ixz = "322.99e-6" iyy = "1244.78e-6" iyz = "244.74e-6" izz = "456.22e-6" />
+            <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+        </inertial>
+    </link>
+    <joint name="right_hand_wrist2thumb" type="fixed">
+        <parent link="right_hand_base"/>
+        <child link="right_hand_thumb_base"/>
+        <origin xyz = "-24.0476665e-3 3.78124745e-3 32.32964923e-3" rpy = "3.14148426 -0.08848813 -3.14036612"/>
+    </joint>
+
+
+    <link name="right_hand_thumb_base" >
+        <inertial>
+            <mass value = "0.200"/>
+            <inertia ixx="978.26e-6" ixy = "87.34e-6" ixz = "322.99e-6" iyy = "1244.78e-6" iyz = "244.74e-6" izz = "456.22e-6" />
+            <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
+        </inertial>
+                        
+        <visual name="right_hand_palm_mesh">
+            <origin rpy = "0 0 0" xyz = "0 0 0"/>
+            <geometry>
+                <mesh filename="meshes/FB_palm_ref_MIR.STL"/>
+            </geometry>
+            <material name="white">
+              <color rgba="0.7 0.7 0.7 1"/>
+            </material>
+        </visual>
+        <collision name="right_hand_palm_mesh">
+            <origin rpy = "0 0 0" xyz = "0 0 0"/>
+            <geometry>
+                <mesh filename="meshes/FB_palm_ref_MIR.STL"/>
+            </geometry>
+        </collision>		
+    </link>
+    <link name="center_palm">
+      <inertial>
+        <mass value="1.0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <sphere radius="0.001"/>
+        </geometry>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <material name="blue"/>
+      </visual>
+      <collision>
+        <geometry>
+          <sphere radius="0.001"/>
+        </geometry>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+    </link>
+    
+    <joint name="hand2ball" type="fixed">
+        <parent link="right_hand_base"/>
+        <child link="center_palm"/>
+        <origin xyz = "0.0 -0.002 0.06" rpy = "0.349066 0 0"/>
+    </joint>
 </robot>

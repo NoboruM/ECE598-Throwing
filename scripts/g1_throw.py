@@ -20,7 +20,7 @@ class ThrowController:
         self.init_time = 3.0
         self.back_time = self.init_time + 3.0
         self.throw_time = 1.0
-        self.hand_release_t = 0.22
+        self.hand_release_t = 0.17
         self.traj_idx = 0
         self.traj_calculated = False
         # in order of: 
@@ -48,7 +48,7 @@ class ThrowController:
         urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
         # Setup robot
         self.robot = optas.RobotModel(urdf_filename)
-        link_ee = "right_wrist_yaw_link"
+        link_ee = "center_palm"
         self.ik_solver = G1ThrowSearch(self.robot, link_ee)
 
 
@@ -66,15 +66,16 @@ class ThrowController:
     def ComputePolyThrowTraj(self, r_T):
         pelvis_z = 0.793
         z_offset = pelvis_z - 0.5
-        r_T[3] = r_T[3] - z_offset
+        r_T[2] = r_T[2] - z_offset
         soln, soln_ee, soln_manip, dqf = self.ik_solver.SolveIK(optas.np.zeros(self.robot.ndof), r_T)
         soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
         ## Get end configuration, end velocity
         quat_T, mu_hat, v_0 = CalcTrajParams(r_T, soln_ee)
-
+        print("desired vel: ", mu_hat*v_0)
         qf = ((soln.full()).T)[0] # convert to numpy array 
         dqf = ((dqf.full()).T)[0] # convert to numpy array 
         dqf = dqf*v_0
+        self.q_0 = qf - dqf/2.0*self.throw_time
         dq0 = np.zeros(len(self.q_0))
         t = np.arange(0, 2.0, self.control_dt_)
         self.plan_q = np.zeros((len(self.q_0), len(t)))
@@ -153,11 +154,11 @@ if __name__ == '__main__':
         ChannelFactoryInitialize(0, sys.argv[1])
     else:
         ChannelFactoryInitialize(1, "lo")
-    r_T = [3, 0, 1]
+    r_T = [3.0, 0.0, 1]
     controller = ThrowController()
     controller.Init()
-    controller.Start()
     controller.ComputePolyThrowTraj(r_T)
+    controller.Start()
 
     while True:        
         time.sleep(1)

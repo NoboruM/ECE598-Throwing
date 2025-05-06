@@ -38,14 +38,14 @@ class G1ThrowSearch:
         # self.builder.add_bound_inequality_constraint("torso_pitch", -0.174533, self.torso_rpy(self.q_T)[1,:], 0.174533)
 
         q_0 = self.builder.add_parameter("q_0", robot.ndof)  # initial robot joint configuration
-        r_targ = self.builder.add_parameter("r_targ", 3)  # ball target position in world coordinates
+        r_T = self.builder.add_parameter("r_T", 3)  # ball target position in world coordinates
 
 
         r_ee = self.fk(self.q_T)
         mu_hat = optas.SX.zeros(3, 1)
         mu_2 = optas.SX.zeros(3, 1)
 
-        tmp = r_targ - r_ee # vector from end effector to target
+        tmp = r_T - r_ee # vector from end effector to target
         Z = optas.norm_2(tmp[0:2]) #modify z component to make the 45 deg angle 
         tmp[2] = Z
         mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
@@ -65,12 +65,12 @@ class G1ThrowSearch:
         # setup solver
         self.solver_casadi = optas.CasADiSolver(self.builder.build()).setup("ipopt", {"ipopt.print_level": 0})
 
-    def SolveIK(self, q_0, r_targ):
+    def SolveIK(self, q_0, r_T):
 
         # Set parameters
         self.solver_casadi.reset_parameters({
             "q_0": optas.DM(q_0),
-            "r_targ": r_targ})
+            "r_T": r_T})
 
         # set initial seed
         self.solver_casadi.reset_initial_seed({f"{self.robot_name}/q/x": q_0})
@@ -80,7 +80,7 @@ class G1ThrowSearch:
         ########################## calculate the manipulability of result: ##########################
         r_ee = self.fk(solution_casadi[f"{self.robot_name}/q"])
         mu_hat = optas.SX.zeros(3, 1)
-        tmp = r_targ - r_ee # vector from end effector to target
+        tmp = r_T - r_ee # vector from end effector to target
         Z = optas.norm_2(tmp[0:2]) #modify z component to make the 45 deg angle 
         tmp[2] = Z
         mu_hat = tmp/optas.norm_2(tmp) # unit launch direction vector
@@ -90,9 +90,16 @@ class G1ThrowSearch:
         A = J[:3,:]@transpose(J[:3,:])
         mu_2 = 1.0/optas.sqrt(transpose(mu_hat)@optas.inv(A)@mu_hat) # for position q_t, this measures the max achievable velocity in direction mu_hat 
         lambda_ = 1e-3  # Damping coefficient
-        J_pinv_damped = transpose(J) @ optas.inv(J @ transpose(J) + lambda_ * SX.eye(J.shape[0]))
-        v_eff = optas.DM([mu_hat[0], mu_hat[1], mu_hat[2], 0, 0, 0])
+        # J_pinv_damped = transpose(J) @ optas.inv(J @ transpose(J) + lambda_ * SX.eye(J.shape[0]))
+        # v_eff = optas.DM([mu_hat[0], mu_hat[1], mu_hat[2], 0, 0, 0])
+        # unit_dq_f = J_pinv_damped @ v_eff 
+
+
+        J_pinv_damped = transpose(J[:3,:]) @ optas.inv(J[:3,:] @ transpose(J[:3,:]) + lambda_ * SX.eye(J[:3,:].shape[0]))
+        v_eff = optas.DM([mu_hat[0], mu_hat[1], mu_hat[2]])
         unit_dq_f = J_pinv_damped @ v_eff 
+
+
         unit_dq_f = optas.DM(unit_dq_f)
         print("unitdq: ", unit_dq_f)
 
@@ -103,11 +110,11 @@ class G1ThrowSearch:
         print("manipulability score: ", mu_2)
         return solution_casadi[f"{self.robot_name}/q"], r_ee, mu_2, unit_dq_f
       
-def CalcTrajParams(r_targ, x_T):
-    r_target = np.array(r_targ)
+def CalcTrajParams(r_T, x_T):
+    r_Tet = np.array(r_T)
     r_ee = np.array([x_T[0], x_T[1], x_T[2]])
-    r_e2T = r_target - r_ee
-    tmp = r_target - r_ee # vector from end effector to target
+    r_e2T = r_Tet - r_ee
+    tmp = r_Tet - r_ee # vector from end effector to target
     tmp[2] = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
     Z = r_e2T[2]
     mu_hat = tmp/np.linalg.norm(tmp) # unit launch direction vector
@@ -133,8 +140,12 @@ def main():
     urdf_filename = os.path.join(cwd, "robot", "g1", "g1_dual_arm.urdf")
     # Setup robot
     robot = optas.RobotModel(urdf_filename)
+    joints = robot.urdf.joints
+    joint_names = [jnt.name for jnt in joints]
+    for name in joint_names:
+        print(name)
     robot_name = robot.get_name()
-    link_ee = "right_wrist_yaw_link"  # end-effector link name
+    link_ee = "center_palm"  # end-effector link name
 
     throw_pose_finder = G1ThrowSearch(robot, link_ee)
 
@@ -157,8 +168,6 @@ def main():
     r_wrist_p_jnt = 0.0
     r_wrist_y_jnt = 0.0#-90.0
     q_0 = optas.np.deg2rad([waist_y_jnt,
-        waist_r_jnt,
-        waist_p_jnt,
         l_shoulder_p_jnt,
         l_shoulder_r_jnt,
         l_shoulder_y_jnt,
@@ -172,22 +181,41 @@ def main():
         r_elbow_jnt,
         r_wrist_r_jnt,
         r_wrist_p_jnt,
-        r_wrist_y_jnt])
-    
+        r_wrist_y_jnt,
+        ])
     vis = Visualizer()
     ### Test basic trajectory with previous soln as initial guess. Speeds up a significant amount if have good init guess
     # for i in range(10):
     #     soln = ik_solver.SolveIK([0.1 + i/20.0, 0, 0.2], theta_T, q_0)
     #     vis.robot(robot, soln, alpha=0.5)
     #     q_0 = soln
-    r_targ = [2.0, 0, 0.5]
-    soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_targ)
-    # r_targ = [0.5, -0.5, 0.5]
-    # soln2, soln2_ee, soln2_manip = ik_solver.SolveIK(q_0, r_targ)
-    vis.robot(robot, soln1, alpha=1.0, show_links = True, link_axis_scale=1.0)
-    vis.sphere(position=r_targ, radius=0.05, alpha=0.8, rgb=[1, 0, 0])
-    # vis.robot(robot, soln2, alpha=0.75, )
-    vis.grid_floor()
+    r_T = [3.0, 0, 1]
+    soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_T)
+    vis.robot(robot, soln1, alpha=1.0, show_links = False, link_axis_scale=0.2)
+    vis.sphere(position=r_T, radius=0.05, alpha=1.0, rgb=[1, 0, 0])
+    
+    ee_pos = robot.get_global_link_position(link_ee, soln1)
+    ee_rot = robot.get_global_link_rotation(link_ee, soln1)
+    y_axis = ee_rot@[0, 1, 0]
+    orientation = robot.get_global_link_rpy(link_ee, soln1)
+    vis.cylinder(
+        radius=0.01,
+        height=0.3,
+        rgb=[0, 1, 0],
+        alpha=1.0,
+        position=ee_pos + 0.15*y_axis,
+        orientation=orientation
+    )
+    vis.cylinder(
+        radius=0.005,
+        height=r_T[2],
+        rgb=[1, 0, 0],
+        alpha=0.8,
+        position=[3, 0, r_T[2]/2.0],
+        orientation=[1.57, 0, 0]
+    )
+    vis.text(msg="target", position=[3, 0.03, r_T[2]], scale=[0.008, 0.008, 0.008], rgb=[1, 1, 1])
+    vis.grid_floor(rgb=[0.5, 0.5, 0.5])
     vis.start()
 
 if __name__ == "__main__":

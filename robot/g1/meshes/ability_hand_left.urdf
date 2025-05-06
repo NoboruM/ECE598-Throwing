@@ -65,13 +65,6 @@
             <origin xyz = "22.41911e-3 -0.15798201e-3 -0.01319866e-3" rpy = "0 0 0"/>
         </inertial>
     </link>
-    <joint name="right_hand_wrist2thumb" type="fixed">
-        <parent link="right_hand_base"/>
-        <child link="right_hand_thumb_base"/>
-        <origin xyz = "-24.0476665e-3 3.78124745e-3 32.32964923e-3" rpy = "3.14148426 -0.08848813 -3.14036612"/>
-    </joint>
-
-
     <link name="right_hand_thumb_base" >
         <inertial>
             <mass value = "0.200"/>
@@ -152,13 +145,6 @@
         <mimic joint = "right_hand_index_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
     </joint>
 
-    <link name="right_hand_index_anchor"/>
-    <joint name="right_hand_idx_anchor" type="fixed">
-        <parent link = "right_hand_index_L2"/>
-        <child link = "right_hand_index_anchor"/>
-        <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
-    </joint>
-
     
 
     <link name="right_hand_middle_L1" >
@@ -221,12 +207,6 @@
         <mimic joint = "right_hand_middle_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
     </joint>
 
-    <link name="right_hand_middle_anchor"/>
-    <joint name="right_hand_mid_anchor" type="fixed">
-        <parent link = "right_hand_middle_L2"/>
-        <child link = "right_hand_middle_anchor"/>
-        <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
-    </joint>
 
     <link name="right_hand_ring_L1" >
         <inertial>
@@ -284,13 +264,6 @@
         <limit lower = "0.0" upper = "2.6586" effort = "0.20" velocity = "8.0677777442"/>		<!-- angles in rad, efforts in N-m, velocity in rad/s -->
         <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
         <mimic joint = "right_hand_ring_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
-    </joint>
-
-    <link name="right_hand_ring_anchor"/>
-    <joint name="right_hand_rng_anchor" type="fixed">
-        <parent link = "right_hand_ring_L2"/>
-        <child link = "right_hand_ring_anchor"/>
-        <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
     </joint>
 
     <link name="right_hand_pinky_L1" >
@@ -352,13 +325,6 @@
         <dynamics damping = "0.001" friction = "0.001" />	<!-- Friction coefficient is not from quantitative measurement -->
         <axis xyz="0 0 1"/>
         <mimic joint = "right_hand_pinky_q1" multiplier =  "1.05851325" offset = "0.72349796"/>
-    </joint>
-
-    <link name="right_hand_pinky_anchor"/>
-    <joint name="right_hand_pnky_anchor" type="fixed">
-        <parent link = "right_hand_pinky_L2"/>
-        <child link = "right_hand_pinky_anchor"/>
-        <origin rpy = "0 0 0" xyz = "31.5541e-3  -10.44e-3 0.14e-3"/>
     </joint>
 
     <link name="right_hand_thumb_L1" >

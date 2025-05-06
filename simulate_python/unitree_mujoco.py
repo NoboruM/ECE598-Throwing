@@ -73,8 +73,11 @@ viewer = mujoco.viewer.launch_passive(
     mj_model, mj_data,
     key_callback=elastic_band.MujuocoKeyCallback
 )
-
-
+body_id = mj_model.body("right_wrist_yaw_link").id
+velocity = np.zeros(6)  # [linear, rotational]
+# mujoco.mj_objectVelocity(mj_model, mj_data, mujoco.mjtObj.mjOBJ_SITE, body_id, velocity, 0)
+# linear_velocity = velocity[:3]
+# print("linear veloctiy: ", linear_velocity)
 
 def SimulationThread():
     global mj_data
@@ -88,7 +91,12 @@ def SimulationThread():
                 mj_data.xfrc_applied[band_attached_link, :3] = elastic_band.Advance(
                     mj_data.qpos[:3], mj_data.qvel[:3]
                 )
+            
             mujoco.mj_step(mj_model, mj_data)
+            mujoco.mj_objectVelocity(mj_model, mj_data, mujoco.mjtObj.mjOBJ_BODY, body_id, velocity, 0)
+            linear_velocity = velocity[:3]
+            print("linear veloctiy: ", linear_velocity)
+            print("magnitude of velocity: ", np.linalg.norm(linear_velocity))
         time_until_next_step = mj_model.opt.timestep - (time.perf_counter() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)
