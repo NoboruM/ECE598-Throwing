@@ -7,6 +7,7 @@ import numpy as np
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from unitree_sdk2py_bridge import UnitreeSdk2Bridge, ElasticBand
 import config
+import math 
 
 # Add EGL configuration for headless rendering
 import os
@@ -15,6 +16,7 @@ os.environ["MUJOCO_GL"] = "egl"  # Force EGL backend
 locker = Lock()
 mj_model = mujoco.MjModel.from_xml_path(config.ROBOT_SCENE)
 mj_data = mujoco.MjData(mj_model)
+fovy = mj_model.cam_fovy
 desired_qpos_values = np.zeros(56)
 init_finger_angle = 0.5
 desired_hand_pos = np.array([
@@ -72,6 +74,8 @@ viewer = mujoco.viewer.launch_passive(
     key_callback=elastic_band.MujuocoKeyCallback
 )
 
+
+
 def SimulationThread():
     global mj_data
     ChannelFactoryInitialize(config.DOMAIN_ID, config.INTERFACE)
@@ -97,6 +101,44 @@ def PhysicsViewerThread():
                 renderer.update_scene(mj_data, camera="rgb_cam")
                 rgb_image = renderer.render()
                 rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)  # Convert to BGR
+
+                #Detecting Clowns 
+                hsv = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2HSV)
+                lower_yellow = np.array([20,100,100])
+                upper_yellow = np.array([30,255,255])
+                mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                for cnt in contours:
+                    area = cv2.contourArea(cnt)
+                    if area >100: 
+                        x,y,w,h = cv2.boundingRect(cnt) 
+                        cx, cy = x+w //2, y+h //2
+                        width = 640 #parameters known
+                        height = 480 #parameters known 
+                        depth = 3 #3 meters known value 
+                        
+                        fovy_rad = math.radians(fovy)
+                        fy = 0.5*height/math.tan(fovy_rad/2)
+                        fx = fy*(width/height)
+                        cx0 = width/2
+                        cy0 = height/2
+                        #cy2 = -1*(cy-height) #rotating cy frame to  
+
+
+                        X = ((cx - cx0)*depth)/fx
+                        Y= ((cy - cy0))*depth/fy
+                        Z= depth
+                        
+                        print(f"World Coordinates: X={X:.3f}, Y={Y:.3f}, Z={Z:.3f}")
+
+                        cv2.rectangle(rgb_image, (x,y), (x+w, y+h), (0, 255,0),2) #Bounding box highlighting the clowns
+                        cv2.circle(rgb_image, (cx,cy),5,(255,0,0),-1) #Circular point of the midpoint (direct center of clowns)
+                        cv2.putText(rgb_image, f"({X:.2f},{Y:.2f},{Z:.2f})", (cx+10,cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255),1)
+
+
+
         if config.USE_CAMERA:
             # OpenCV operations in main thread
             cv2.imshow('RGB Camera View', rgb_image)
