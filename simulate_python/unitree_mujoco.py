@@ -48,6 +48,14 @@ for i in range(0, 56):
     mj_data.qpos[i] = desired_qpos_values[i]
 mujoco.mj_forward(mj_model, mj_data)    # Propagates initial state
 
+# === Cache full initial robot + ball state for reset ===
+global_initial_qpos = mj_data.qpos.copy()
+global_initial_qvel = mj_data.qvel.copy()
+# Identify ball joint position index for reset
+ball_joint = mj_model.joint("ball_joint")
+qpos_adr   = int(ball_joint.qposadr)
+RESET_HEIGHT = 0.1  # meters
+
 # set initial joint torques on right arm to keep zero pose:
 mj_data.ctrl[22:29] = [-2.4, -0.209, 0.0, -2.6, -0.0128, -0.8, -0.00198]
 # set initial joint torques on the right hand to grasp the ball
@@ -93,6 +101,14 @@ def SimulationThread():
                 )
             
             mujoco.mj_step(mj_model, mj_data)
+            
+            # === Reset entire qpos/qvel when ball falls below threshold ===
+            if mj_data.qpos[qpos_adr + 2] < RESET_HEIGHT:
+                mj_data.qpos[:] = global_initial_qpos
+                mj_data.qvel[:] = global_initial_qvel
+                mujoco.mj_forward(mj_model, mj_data)
+                print(f"Reset full state at sim time {mj_data.time:.2f}s")
+              
             mujoco.mj_objectVelocity(mj_model, mj_data, mujoco.mjtObj.mjOBJ_BODY, body_id, velocity, 0)
             linear_velocity = velocity[:3]
             print("linear veloctiy: ", linear_velocity)
