@@ -10,6 +10,18 @@ from scipy.spatial.transform import Rotation
 import optas
 from optas.visualize import Visualizer
 
+def Compute1PolyTraj(t, q0, dq0, qf, dqf, t0, tf):
+    A = np.array([
+        [1, t0, t0**2, t0**3],
+        [0, 1, 2*t0, 3*t0**2],
+        [1, tf, tf**2, tf**3],
+        [0, 1, 2*tf, 3*tf**2]
+    ])
+    B = np.array([q0, dq0, qf, dqf])
+    a0, a1, a2, a3  = np.linalg.solve(A, B)
+    return a0 + a1*t + a2*t**2 + a3*t**3
+
+
 class G1ThrowSearch:
     def __init__(self, robot, eff_link, base_link=None):
         self.robot = robot
@@ -117,9 +129,12 @@ def CalcTrajParams(r_T, x_T):
     tmp = r_Tet - r_ee # vector from end effector to target
     tmp[2] = np.linalg.norm(tmp[0:2]) #modify z component to make the 45 deg angle 
     Z = r_e2T[2]
+    X = tmp[0]
+    Y = tmp[1]
     mu_hat = tmp/np.linalg.norm(tmp) # unit launch direction vector
     original_dir = np.array([0, 1, 0]) # align y axis with the direction
     v_0 = np.sqrt(9.81*np.linalg.norm(tmp[:2])/(2*(mu_hat[2]*np.linalg.norm(tmp[:2]) - Z*np.linalg.norm(mu_hat[:2]))*np.linalg.norm(mu_hat[:2])))
+    # v_0 = np.sqrt(9.81*(X**2 + Y**2)/(np.linalg.norm(tmp[:2]) - Z))
     # compute rotation axis and angle
     cross = np.cross(original_dir, mu_hat)
     axis = cross / np.linalg.norm(cross) if np.linalg.norm(cross) > 1e-6 else np.array([1, 0, 0])
@@ -187,36 +202,68 @@ def main():
     ### Test basic trajectory with previous soln as initial guess. Speeds up a significant amount if have good init guess
     # for i in range(10):
     #     soln = ik_solver.SolveIK([0.1 + i/20.0, 0, 0.2], theta_T, q_0)
-    #     vis.robot(robot, soln, alpha=0.5)
+    #     vis.robot(robot, soln, alpha=1.0)
     #     q_0 = soln
     r_T = [3.0, 0, 1]
-    soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_T)
-    vis.robot(robot, soln1, alpha=1.0, show_links = False, link_axis_scale=0.2)
+    # soln1, soln1_ee, soln1_manip, dqf = throw_pose_finder.SolveIK(q_0, r_T)
+    # calculate trajectory: 
+    # soln1_ee = ((soln1_ee.full()).T)[0] # convert to numpy array 
+
+    pelvis_z = 0.793
+    z_offset = pelvis_z - 0.5
+    r_T[2] = r_T[2] - z_offset
+    soln, soln_ee, soln_manip, dqf = throw_pose_finder.SolveIK(optas.np.zeros(robot.ndof), r_T)
+    soln_ee = ((soln_ee.full()).T)[0] # convert to numpy array 
+    ## Get end configuration, end velocity
+    quat_T, mu_hat, v_0 = CalcTrajParams(r_T, soln_ee)
+    print("desired vel: ", mu_hat*v_0)
+    qf = ((soln.full()).T)[0] # convert to numpy array 
+    dqf = ((dqf.full()).T)[0] # convert to numpy array 
+    dqf = dqf*v_0
+    q_0 = qf - dqf/2.0*1.0
+    dq0 = np.zeros(len(q_0))
+    t = np.arange(0, 2.0, 0.02)
+    plan_q = np.zeros((len(q_0), len(t)))
+    for i in range(len(q_0)):
+        plan_q[i,:] = Compute1PolyTraj(t, q_0[i], dq0[i], qf[i], dqf[i], 0, 1.0)
+
+    soln = plan_q[:,0]
+    vis.robot(robot, soln, alpha=0.2, show_links = False, link_axis_scale=0.2)
+    soln = plan_q[:,10]
+    vis.robot(robot, soln, alpha=0.4, show_links = False, link_axis_scale=0.2)
+    soln = plan_q[:,20]
+    vis.robot(robot, soln, alpha=0.6, show_links = False, link_axis_scale=0.2)
+    soln = plan_q[:,30]
+    vis.robot(robot, soln, alpha=0.8, show_links = False, link_axis_scale=0.2)
+    soln = plan_q[:,40]
+    vis.robot(robot, soln, alpha=1.0, show_links = False, link_axis_scale=0.2)
     vis.sphere(position=r_T, radius=0.05, alpha=1.0, rgb=[1, 0, 0])
     
-    ee_pos = robot.get_global_link_position(link_ee, soln1)
-    ee_rot = robot.get_global_link_rotation(link_ee, soln1)
-    y_axis = ee_rot@[0, 1, 0]
-    orientation = robot.get_global_link_rpy(link_ee, soln1)
-    vis.cylinder(
-        radius=0.01,
-        height=0.3,
-        rgb=[0, 1, 0],
-        alpha=1.0,
-        position=ee_pos + 0.15*y_axis,
-        orientation=orientation
-    )
-    vis.cylinder(
-        radius=0.005,
-        height=r_T[2],
-        rgb=[1, 0, 0],
-        alpha=0.8,
-        position=[3, 0, r_T[2]/2.0],
-        orientation=[1.57, 0, 0]
-    )
-    vis.text(msg="target", position=[3, 0.03, r_T[2]], scale=[0.008, 0.008, 0.008], rgb=[1, 1, 1])
+    # ee_pos = robot.get_global_link_position(link_ee, soln1)
+    # ee_rot = robot.get_global_link_rotation(link_ee, soln1)
+    # y_axis = ee_rot@[0, 1, 0]
+    # orientation = robot.get_global_link_rpy(link_ee, soln1)
+    # vis.cylinder(
+    #     radius=0.01,
+    #     height=0.3,
+    #     rgb=[0, 1, 0],
+    #     alpha=1.0,
+    #     position=ee_pos + 0.15*y_axis,
+    #     orientation=orientation
+    # )
+    # vis.cylinder(
+    #     radius=0.005,
+    #     height=r_T[2],
+    #     rgb=[1, 0, 0],
+    #     alpha=0.8,
+    #     position=[3, 0, r_T[2]/2.0],
+    #     orientation=[1.57, 0, 0]
+    # )
+    # vis.text(msg="target", position=[3, 0.03, r_T[2]], scale=[0.008, 0.008, 0.008], rgb=[1, 1, 1])
     vis.grid_floor(rgb=[0.5, 0.5, 0.5])
     vis.start()
 
 if __name__ == "__main__":
     main()
+
+

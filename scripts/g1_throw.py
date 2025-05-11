@@ -20,7 +20,7 @@ class ThrowController:
         self.init_time = 3.0
         self.back_time = self.init_time + 3.0
         self.throw_time = 1.0
-        self.hand_release_t = 0.17
+        self.hand_release_t = 0.2
         self.traj_idx = 0
         self.traj_calculated = False
         # in order of: 
@@ -75,7 +75,7 @@ class ThrowController:
         qf = ((soln.full()).T)[0] # convert to numpy array 
         dqf = ((dqf.full()).T)[0] # convert to numpy array 
         dqf = dqf*v_0
-        self.q_0 = qf - dqf/2.0*self.throw_time
+        # self.q_0 = qf - dqf/2.0*self.throw_time
         dq0 = np.zeros(len(self.q_0))
         t = np.arange(0, 2.0, self.control_dt_)
         self.plan_q = np.zeros((len(self.q_0), len(t)))
@@ -112,8 +112,12 @@ class ThrowController:
                         a = self.joint_init_pos[i]
                         b = self.q_0[i-12]
                         self.joint_pos_cmd[i] = (b - a)/2.0*np.sin(np.pi*ratio - np.pi/2) + (a + b)/2.0
-                else: 
+                elif (i >= 29 and i <= 34): 
                     self.joint_pos_cmd[i] = self.joint_init_pos[i]
+                else:
+                    a = self.joint_init_pos[i]
+                    b = 0
+                    self.joint_pos_cmd[i] =  (b - a)/2.0*np.sin(np.pi*ratio - np.pi/2) + (a + b)/2.0
 
             self.start_throw_t = self.time_
         elif (self.time_ < (self.start_throw_t + self.throw_time)):
@@ -139,7 +143,7 @@ class ThrowController:
                     self.joint_vel_cmd[i] = 0.0
             self.traj_idx += 1
         else:
-            controller.MujocoInterface.done = False
+            controller.MujocoInterface.done = True
         # store the target joint positions
         for i in range(41):
             self.MujocoInterface.target_pos[i].q = self.joint_pos_cmd[i]
@@ -154,9 +158,10 @@ if __name__ == '__main__':
         ChannelFactoryInitialize(0, sys.argv[1])
     else:
         ChannelFactoryInitialize(1, "lo")
-    r_T = [3.0, 0.0, 1]
+    r_T = [3.0, 0.0, 0.6]
     controller = ThrowController()
     controller.Init()
+    print("start!!!!")
     controller.ComputePolyThrowTraj(r_T)
     controller.Start()
 
@@ -164,4 +169,5 @@ if __name__ == '__main__':
         time.sleep(1)
         if controller.MujocoInterface.done: 
            print("Done!")
+           time.sleep(2)
            sys.exit(-1)    

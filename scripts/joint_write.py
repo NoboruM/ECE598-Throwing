@@ -13,7 +13,7 @@ from unitree_sdk2py.utils.thread import RecurrentThread
 from unitree_sdk2py.comm.motion_switcher.motion_switcher_client import MotionSwitcherClient
 
 import numpy as np
-
+import time
 kPi = 3.141592654
 kPi_2 = 1.57079632
 
@@ -81,6 +81,7 @@ class G1JointIndex:
 
 class MujocoInterface:
     def __init__(self):
+        self.start_time = time.time()
         self.time_ = 0.0
         self.control_dt_ = 0.02  
         self.duration_ = 3.0   
@@ -103,7 +104,14 @@ class MujocoInterface:
         self.first_update_low_state = False
         self.crc = CRC()
         self.done = False
-
+        self.measured_file = open("measured_joints.csv", 'w')
+        self.commanded_file = open("commanded_joints.csv", 'w')
+        header_read = ','.join(['time_'] + [f'read/joint_{i+1}' for i in range(41)])
+        header_cmd = ','.join(['time_'] + [f'cmd/joint_{i+1}' for i in range(41)])
+        self.measured_file.write(f"{header_read}\n")
+        self.commanded_file.write(f"{header_cmd}\n")
+        self.data_meas = np.zeros(41)
+        self.data_cmd = np.zeros(41)
         self.target_pos = [
             MotorCmd_(G1JointIndex.LeftHipPitch, 0.0, 0.0, 0.0, 60, 1.0, 0),
             MotorCmd_(G1JointIndex.LeftHipRoll, 0.0, 0.0, 0.0, 60, 1.0, 0),
@@ -175,6 +183,14 @@ class MujocoInterface:
                 self.target_pos[i].q = msg.motor_state[i].q
             self.first_update_low_state = True
         
+        for i in range(len(self.target_pos)):
+            self.data_meas[i] = msg.motor_state[i].q
+        self.write_row(self.measured_file, time.time()- self.start_time, self.data_meas)
+        
+    def write_row(self, file, timestamp, positions):
+        row = ','.join([f"{timestamp:.6f}"] + [f"{pos:.6f}" for pos in positions])
+        file.write(f"{row}\n")
+
     def LowCmdWrite(self):
         self.time_ += self.control_dt_
         for i, joint in enumerate(self.target_pos):
@@ -185,8 +201,11 @@ class MujocoInterface:
                 self.low_cmd.motor_cmd[joint.mode].kp = self.target_pos[i].kp
                 self.low_cmd.motor_cmd[joint.mode].kd = self.target_pos[i].kd
 
+            self.data_cmd[i] = self.target_pos[i].q
         self.low_cmd.crc = self.crc.Crc(self.low_cmd)
         self.arm_sdk_publisher.Write(self.low_cmd)
+        self.write_row(self.commanded_file, time.time()- self.start_time, self.data_cmd)
+        
 
 if __name__ == '__main__':
 
